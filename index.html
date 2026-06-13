@@ -9,7 +9,7 @@
     <!-- Lucide Icons para simbología enriquecida -->
     <script src="https://unpkg.com/lucide@latest"></script>
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;600;700;800&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght=300;400;600;700;800&display=swap');
         
         body {
             font-family: 'Plus Jakarta Sans', sans-serif;
@@ -18,10 +18,10 @@
 
         /* Efecto Glassmorphism Premium */
         .glass-panel {
-            background: rgba(15, 23, 42, 0.65);
-            backdrop-filter: blur(20px);
-            -webkit-backdrop-filter: blur(20px);
-            border: 1px solid rgba(255, 255, 255, 0.1);
+            background: rgba(10, 15, 30, 0.7);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border: 1px solid rgba(255, 255, 255, 0.08);
         }
 
         /* Ocultar barra de desplazamiento */
@@ -36,9 +36,14 @@
         /* Efecto de fecha seleccionada activa */
         .date-active {
             background: linear-gradient(135deg, #10b981 0%, #059669 100%);
-            box-shadow: 0 10px 15px -3px rgba(16, 185, 129, 0.4);
+            box-shadow: 0 8px 20px -4px rgba(16, 185, 129, 0.4);
             transform: translateY(-2px);
-            border-color: rgba(255, 255, 255, 0.2);
+            border-color: rgba(255, 255, 255, 0.25);
+        }
+
+        /* Transiciones suaves globales */
+        .smooth-transition {
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
         }
     </style>
 </head>
@@ -46,21 +51,21 @@
 
     <!-- CANVAS INTERACTIVO DE FONDO -->
     <div class="fixed inset-0 w-full h-full -z-10 overflow-hidden">
-        <canvas id="canvasFondo" class="w-full h-full block"></canvas>
+        <canvas id="canvasFondo" class="w-full h-full block opacity-75"></canvas>
     </div>
 
     <!-- NOTIFICACIÓN EN TIEMPO REAL -->
     <div id="toast" class="fixed top-5 right-5 z-50 glass-panel px-6 py-3 rounded-xl border border-emerald-500/30 text-emerald-400 flex items-center gap-3 shadow-2xl transition-all duration-300 transform translate-y-[-100px] opacity-0">
-        <i data-lucide="info" class="w-5 h-5 text-emerald-400"></i>
+        <i id="toast-icon" data-lucide="info" class="w-5 h-5 text-emerald-400"></i>
         <span id="toast-message" class="text-sm font-semibold"></span>
     </div>
 
     <!-- PANEL LATERAL: CONTROLES DEL CANVAS Y FILTROS -->
     <main class="w-full md:w-[380px] min-h-screen md:max-h-screen overflow-y-auto no-scrollbar flex flex-col justify-between p-6 z-10 glass-panel shadow-2xl border-r border-white/10 shrink-0">
         
-        <div>
-            <!-- Encabezado con estética oficial -->
-            <div class="flex items-center gap-3 mb-6">
+        <div class="space-y-6">
+            <!-- Encabezado Oficial -->
+            <div class="flex items-center gap-3">
                 <div class="bg-gradient-to-tr from-yellow-400 via-emerald-500 to-blue-600 p-2.5 rounded-xl shadow-lg shadow-emerald-500/20">
                     <i data-lucide="calendar" class="w-6 h-6 text-white"></i>
                 </div>
@@ -72,14 +77,8 @@
                 </div>
             </div>
 
-            <p class="text-slate-300 text-xs mb-6 leading-relaxed">
-                Navega por las fechas del torneo (11 de junio al 19 de julio). El sistema de simulación está centrado en el día de hoy. ¡Personaliza el fondo del mundial usando los controles inferiores!
-            </p>
-
-            <hr class="border-white/10 mb-6" />
-
             <!-- BUSCADOR DE EQUIPOS -->
-            <div class="mb-6">
+            <div>
                 <label class="block text-xs font-bold uppercase tracking-wider text-slate-400 mb-2 flex items-center gap-2">
                     <i data-lucide="search" class="w-3.5 h-3.5"></i> Buscar Selección o Estadio
                 </label>
@@ -91,15 +90,70 @@
                 </div>
             </div>
 
+            <!-- CONFIGURACIÓN DE CONEXIÓN A API REAL -->
+            <div class="p-4 rounded-xl bg-slate-950/60 border border-white/5 space-y-3">
+                <div class="flex justify-between items-center">
+                    <span class="text-xs font-bold uppercase tracking-wider text-slate-300 flex items-center gap-2">
+                        <i data-lucide="database" class="w-4 h-4 text-emerald-400"></i> API Real de Resultados
+                    </span>
+                    <span id="status-badge" class="text-[9px] bg-amber-500/10 text-amber-400 border border-amber-500/20 px-2 py-0.5 rounded-full font-bold flex items-center gap-1">
+                        <span class="w-1 h-1 rounded-full bg-amber-400"></span>
+                        Local
+                    </span>
+                </div>
+                
+                <div class="space-y-2 text-[11px]">
+                    <div>
+                        <label class="block text-slate-400 mb-1">Proveedor de Datos</label>
+                        <select id="api-provider" onchange="actualizarInterfazAPI()" class="w-full bg-slate-900 border border-white/10 rounded-lg p-2 text-white focus:outline-none focus:border-emerald-500">
+                            <option value="football-data">Football-Data.org (Recomendado)</option>
+                            <option value="custom-url">URL / Endpoint Personalizado</option>
+                        </select>
+                    </div>
+
+                    <!-- Token de Football-data -->
+                    <div id="container-token">
+                        <div class="flex justify-between items-center mb-1">
+                            <label class="text-slate-400">API Token (X-Auth-Token)</label>
+                            <a href="https://www.football-data.org/client/register" target="_blank" class="text-[10px] text-emerald-400 hover:underline">Obtener gratis</a>
+                        </div>
+                        <input id="api-token" type="password" placeholder="Ingresa tu token v4..." class="w-full bg-slate-900 border border-white/10 rounded-lg p-2 text-white focus:outline-none focus:border-emerald-500">
+                    </div>
+
+                    <!-- Endpoint de URL personalizada -->
+                    <div id="container-custom-url" class="hidden">
+                        <label class="block text-slate-400 mb-1">Dirección URL del Endpoint</label>
+                        <input id="api-custom-url" type="text" placeholder="https://api.tu-servidor.com/worldcup..." class="w-full bg-slate-900 border border-white/10 rounded-lg p-2 text-white focus:outline-none focus:border-emerald-500">
+                    </div>
+
+                    <button id="btn-connect-api" onclick="conectarAPIReal()" class="w-full mt-2 py-2 rounded-lg font-bold bg-emerald-500 hover:bg-emerald-400 text-slate-950 transition-all flex items-center justify-center gap-1.5 shadow-lg shadow-emerald-500/10">
+                        <i data-lucide="wifi" class="w-3.5 h-3.5"></i>
+                        Conectar y Sincronizar
+                    </button>
+                </div>
+                <div class="flex justify-between items-center text-[9px] text-slate-500 pt-1">
+                    <span>Estado:</span>
+                    <span id="api-last-status">Sin conectar a servidor externo</span>
+                </div>
+            </div>
+
+            <hr class="border-white/10" />
+
             <!-- PERSONALIZACIÓN DE FONDO (CANVAS) -->
-            <div class="space-y-5">
-                <p class="text-xs font-bold uppercase text-emerald-400 tracking-wider mb-2 flex items-center gap-2">
-                    <i data-lucide="sliders" class="w-4 h-4"></i> Personalizar Fondo
-                </p>
+            <div class="space-y-4">
+                <div class="flex justify-between items-center mb-1">
+                    <p class="text-xs font-bold uppercase text-emerald-400 tracking-wider flex items-center gap-2">
+                        <i data-lucide="sliders" class="w-4 h-4"></i> Personalizar Fondo
+                    </p>
+                    <button id="btn-toggle-animation" onclick="toggleAnimacion()" class="text-[10px] px-2 py-1 rounded bg-slate-800 hover:bg-slate-700 text-slate-300 border border-white/10 flex items-center gap-1.5 transition-all">
+                        <i data-lucide="pause" id="anim-icon" class="w-3 h-3 text-emerald-400"></i>
+                        <span id="anim-text">Pausar</span>
+                    </button>
+                </div>
 
                 <!-- Estilo -->
                 <div>
-                    <label class="block text-xs font-bold text-slate-400 mb-2">Estilo de Patrón</label>
+                    <label class="block text-xs font-bold text-slate-400 mb-1.5">Estilo de Patrón</label>
                     <div class="grid grid-cols-2 gap-2">
                         <button id="btn-style-concentric" onclick="setPatternStyle('concentric')" class="py-1.5 px-2.5 rounded-lg text-xs font-semibold transition-all border border-emerald-500 bg-emerald-500/20 text-white">
                             Concéntrico
@@ -112,11 +166,11 @@
 
                 <!-- Paleta de Colores -->
                 <div>
-                    <label class="block text-xs font-bold text-slate-400 mb-2">Paletas</label>
-                    <div class="grid grid-cols-3 gap-1">
-                        <button onclick="setPalette('mundial')" class="text-[10px] p-2 rounded-md bg-white/5 hover:bg-white/10 border border-emerald-500/30 text-center">Mundial</button>
-                        <button onclick="setPalette('retro')" class="text-[10px] p-2 rounded-md bg-white/5 hover:bg-white/10 border border-white/5 text-center">Retro</button>
-                        <button onclick="setPalette('sunset')" class="text-[10px] p-2 rounded-md bg-white/5 hover:bg-white/10 border border-white/5 text-center">Ocaso</button>
+                    <label class="block text-xs font-bold text-slate-400 mb-1.5">Paletas de Colores</label>
+                    <div class="grid grid-cols-3 gap-1.5">
+                        <button id="btn-pal-mundial" onclick="setPalette('mundial')" class="text-[10px] p-2 rounded-md bg-white/5 border border-emerald-500/50 text-center transition-all hover:bg-white/10">Mundial</button>
+                        <button id="btn-pal-retro" onclick="setPalette('retro')" class="text-[10px] p-2 rounded-md bg-white/5 border border-white/5 text-center transition-all hover:bg-white/10">Retro</button>
+                        <button id="btn-pal-sunset" onclick="setPalette('sunset')" class="text-[10px] p-2 rounded-md bg-white/5 border border-white/5 text-center transition-all hover:bg-white/10">Ocaso</button>
                     </div>
                 </div>
 
@@ -124,7 +178,7 @@
                 <div>
                     <div class="flex justify-between items-center mb-1">
                         <label class="text-[11px] text-slate-400">Velocidad del Fondo</label>
-                        <span id="speed-value" class="text-[10px] text-emerald-400 bg-emerald-500/10 px-1.5 rounded">Lento</span>
+                        <span id="speed-value" class="text-[10px] text-emerald-400 bg-emerald-500/10 px-1.5 rounded font-bold">Lento</span>
                     </div>
                     <input id="slider-speed" type="range" min="0" max="100" value="25" class="w-full h-1 bg-slate-800 rounded-lg appearance-none cursor-pointer accent-emerald-500">
                 </div>
@@ -133,7 +187,7 @@
                 <div>
                     <div class="flex justify-between items-center mb-1">
                         <label class="text-[11px] text-slate-400">Anillos / Curvas</label>
-                        <span id="curves-value" class="text-[10px] text-emerald-400 bg-emerald-500/10 px-1.5 rounded">15</span>
+                        <span id="curves-value" class="text-[10px] text-emerald-400 bg-emerald-500/10 px-1.5 rounded font-bold">15</span>
                     </div>
                     <input id="slider-curves" type="range" min="5" max="30" value="15" class="w-full h-1 bg-slate-800 rounded-lg appearance-none cursor-pointer accent-emerald-500">
                 </div>
@@ -159,7 +213,7 @@
         <!-- CABECERA DE JUEGO E INFORMACIÓN TEMPORAL -->
         <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-6">
             <div>
-                <h2 id="fase-titulo" class="text-2xl md:text-3xl font-black tracking-tight text-white flex items-center gap-3">
+                <h2 id="fase-titulo" class="text-2xl md:text-3xl font-black tracking-tight text-white flex flex-wrap items-center gap-3">
                     Fase de Grupos 
                     <span class="text-xs md:text-sm bg-emerald-500 text-slate-950 px-2.5 py-1 rounded-full font-bold">11 al 27 de junio</span>
                 </h2>
@@ -169,7 +223,7 @@
             </div>
             
             <!-- Botón rápido para saltar al día actual -->
-            <button onclick="seleccionarDiaActual()" class="flex items-center gap-2 bg-white/10 hover:bg-white/20 border border-white/10 hover:border-white/20 px-4 py-2 rounded-xl text-xs font-bold transition-all text-emerald-400">
+            <button onclick="seleccionarDiaActual()" class="flex items-center gap-2 bg-white/10 hover:bg-white/20 border border-white/10 hover:border-emerald-500/40 px-4 py-2 rounded-xl text-xs font-bold transition-all text-emerald-400 shadow-md">
                 <i data-lucide="clock" class="w-4 h-4"></i>
                 Ver Hoy (12 de Junio)
             </button>
@@ -178,34 +232,34 @@
         <!-- BARRA DESLIZANTE DE CALENDARIO (DÍAS DE PARTIDO) -->
         <div class="mb-6">
             <p class="text-xs font-bold uppercase tracking-widest text-slate-400 mb-3 flex items-center gap-2">
-                <i data-lucide="calendar-days" class="w-4 h-4 text-emerald-400"></i> Selecciona un día de competencia (Desliza para ver más):
+                <i data-lucide="calendar-days" class="w-4 h-4 text-emerald-400"></i> Selecciona un día de competencia:
             </p>
             
-            <!-- Contenedor horizontal scrolleable de fechas -->
-            <div id="date-scroll-container" class="flex gap-2.5 overflow-x-auto pb-3 no-scrollbar scroll-smooth">
+            <!-- Contenedor horizontal scrolleable de fechas con mejor táctil -->
+            <div id="date-scroll-container" class="flex gap-2.5 overflow-x-auto pb-3 no-scrollbar scroll-smooth cursor-grab active:cursor-grabbing select-none">
                 <!-- Se poblará dinámicamente con JS -->
             </div>
         </div>
 
         <!-- BANNER DE FASES DE ELIMINACIÓN DIRECTA -->
         <div class="grid grid-cols-2 sm:grid-cols-5 gap-2 mb-8">
-            <button onclick="seleccionarFaseEliminatoria('dieciseisavos')" class="p-2 text-center rounded-xl bg-slate-900/80 border border-white/10 hover:border-emerald-500/50 transition-all group">
+            <button id="btn-phase-dieciseisavos" onclick="seleccionarFaseEliminatoria('dieciseisavos')" class="p-2 text-center rounded-xl bg-slate-900/80 border border-white/10 hover:border-emerald-500/50 transition-all group">
                 <p class="text-[10px] text-slate-400 uppercase font-bold">Dieciseisavos</p>
                 <p class="text-xs font-bold text-white group-hover:text-emerald-400 transition-colors">28 Jun - 3 Jul</p>
             </button>
-            <button onclick="seleccionarFaseEliminatoria('octavos')" class="p-2 text-center rounded-xl bg-slate-900/80 border border-white/10 hover:border-emerald-500/50 transition-all group">
+            <button id="btn-phase-octavos" onclick="seleccionarFaseEliminatoria('octavos')" class="p-2 text-center rounded-xl bg-slate-900/80 border border-white/10 hover:border-emerald-500/50 transition-all group">
                 <p class="text-[10px] text-slate-400 uppercase font-bold">Octavos</p>
                 <p class="text-xs font-bold text-white group-hover:text-emerald-400 transition-colors">4 - 7 de Julio</p>
             </button>
-            <button onclick="seleccionarFaseEliminatoria('cuartos')" class="p-2 text-center rounded-xl bg-slate-900/80 border border-white/10 hover:border-emerald-500/50 transition-all group">
+            <button id="btn-phase-cuartos" onclick="seleccionarFaseEliminatoria('cuartos')" class="p-2 text-center rounded-xl bg-slate-900/80 border border-white/10 hover:border-emerald-500/50 transition-all group">
                 <p class="text-[10px] text-slate-400 uppercase font-bold">Cuartos</p>
                 <p class="text-xs font-bold text-white group-hover:text-emerald-400 transition-colors">9 - 11 de Julio</p>
             </button>
-            <button onclick="seleccionarFaseEliminatoria('semis')" class="p-2 text-center rounded-xl bg-slate-900/80 border border-white/10 hover:border-emerald-500/50 transition-all group">
+            <button id="btn-phase-semis" onclick="seleccionarFaseEliminatoria('semis')" class="p-2 text-center rounded-xl bg-slate-900/80 border border-white/10 hover:border-emerald-500/50 transition-all group">
                 <p class="text-[10px] text-slate-400 uppercase font-bold">Semifinales</p>
                 <p class="text-xs font-bold text-white group-hover:text-emerald-400 transition-colors">14 - 15 de Julio</p>
             </button>
-            <button onclick="seleccionarFaseEliminatoria('final')" class="col-span-2 sm:col-span-1 p-2 text-center rounded-xl bg-amber-500/10 border border-amber-500/30 hover:border-amber-400 transition-all group">
+            <button id="btn-phase-final" onclick="seleccionarFaseEliminatoria('final')" class="col-span-2 sm:col-span-1 p-2 text-center rounded-xl bg-amber-500/10 border border-amber-500/30 hover:border-amber-400 transition-all group">
                 <p class="text-[10px] text-amber-400 uppercase font-bold">Gran Final</p>
                 <p class="text-xs font-black text-amber-300">19 de Julio</p>
             </button>
@@ -227,176 +281,413 @@
 
     <!-- SCRIPT LOGICAL & DATA -->
     <script>
-        // Banderas / Códigos de Emojis de apoyo para países
+        // Banderas de apoyo para países (Traducción y soporte multi-idioma de APIs)
         const banderasPaises = {
-            "México": "🇲🇽", "Sudáfrica": "🇿🇦", "Corea del Sur": "🇰🇷", "Chequia": "🇨🇿",
-            "Canadá": "🇨🇦", "Bosnia y Herzegovina": "🇧🇦", "Bosnia-Herzegovina": "🇧🇦", "Estados Unidos": "🇺🇸",
-            "Paraguay": "🇵🇾", "Qatar": "🇶🇦", "Suiza": "🇨🇭", "Brasil": "🇧🇷",
-            "Marruecos": "🇲🇦", "Haití": "🇭🇹", "Escocia": "🇬🇧", "Australia": "🇦🇺",
-            "Turquía": "🇹🇷", "Alemania": "🇩🇪", "Curazao": "🇨🇼", "Países Bajos": "🇳🇱",
-            "Japón": "🇯🇵", "Costa de Marfil": "🇨🇮", "Ecuador": "🇪🇨", "Suecia": "🇸🇪",
-            "Túnez": "🇹🇳", "España": "🇪🇸", "Cabo Verde": "🇨🇻", "Bélgica": "🇧🇪",
-            "Egipto": "🇪🇬", "Arabia Saudita": "🇸🇦", "Uruguay": "🇺🇾", "Irán": "🇮🇷",
-            "Nueva Zelanda": "🇳🇿", "Francia": "🇫🇷", "Senegal": "🇸🇳", "Irak": "🇮🇶",
-            "Noruega": "🇳🇴", "Argentina": "🇦🇷", "Argelia": "🇩🇿", "Austria": "🇦🇹",
-            "Jordania": "🇯🇴", "Portugal": "🇵🇹", "RD Congo": "🇨🇩", "Inglaterra": "🇬🇧",
-            "Croacia": "🇭🇷", "Ghana": "🇬🇭", "Panamá": "🇵🇦", "Uzbekistán": "🇺🇿",
+            "México": "🇲🇽", "Mexico": "🇲🇽", "Sudáfrica": "🇿🇦", "South Africa": "🇿🇦", "Corea del Sur": "🇰🇷", "South Korea": "🇰🇷", "Korea Republic": "🇰🇷", "Chequia": "🇨🇿", "Czechia": "🇨🇿", "Czech Republic": "🇨🇿",
+            "Canadá": "🇨🇦", "Canada": "🇨🇦", "Bosnia y Herzegovina": "🇧🇦", "Bosnia-Herzegovina": "🇧🇦", "Bosnia and Herzegovina": "🇧🇦", "Estados Unidos": "🇺🇸", "USA": "🇺🇸", "United States": "🇺🇸",
+            "Paraguay": "🇵🇾", "Qatar": "🇶🇦", "Suiza": "🇨🇭", "Switzerland": "🇨🇭", "Brasil": "🇧🇷", "Brazil": "🇧🇷",
+            "Marruecos": "🇲🇦", "Morocco": "🇲🇦", "Haití": "🇭🇹", "Haiti": "🇭🇹", "Escocia": "🏴󠁧󠁢󠁳󠁣󠁴󠁿", "Scotland": "🏴󠁧󠁢󠁳󠁣󠁴󠁿", "Australia": "🇦🇺",
+            "Turquía": "🇹🇷", "Turkey": "🇹🇷", "Alemania": "🇩🇪", "Germany": "🇩🇪", "Curazao": "🇨🇼", "Curacao": "🇨🇼", "Países Bajos": "🇳🇱", "Netherlands": "🇳🇱",
+            "Japón": "🇯🇵", "Japan": "🇯🇵", "Costa de Marfil": "🇨🇮", "Ivory Coast": "🇨🇮", "Ecuador": "🇪🇨", "Suecia": "🇸🇪", "Sweden": "🇸🇪",
+            "Túnez": "🇹🇳", "Tunisia": "🇹🇳", "España": "🇪🇸", "Spain": "🇪🇸", "Cabo Verde": "🇨🇻", "Cape Verde": "🇨🇻", "Bélgica": "🇧🇪", "Belgium": "🇧🇪",
+            "Egipto": "🇪🇬", "Egypt": "🇪🇬", "Arabia Saudita": "🇸🇦", "Saudi Arabia": "🇸🇦", "Uruguay": "🇺🇾", "Irán": "🇮🇷", "Iran": "🇮🇷",
+            "Nueva Zelanda": "🇳🇿", "New Zealand": "🇳🇿", "Francia": "🇫🇷", "France": "🇫🇷", "Senegal": "🇸🇳", "Irak": "🇮🇶", "Iraq": "🇮🇶",
+            "Noruega": "🇳🇴", "Norway": "🇳🇴", "Argentina": "🇦🇷", "Argelia": "🇩🇿", "Algeria": "🇩🇿", "Austria": "🇦🇹",
+            "Jordania": "🇯🇴", "Jordan": "🇯🇴", "Portugal": "🇵🇹", "RD Congo": "🇨🇩", "DR Congo": "🇨🇩", "Inglaterra": "🏴󠁧󠁢󠁥󠁮󠁧󠁿", "England": "🏴󠁧󠁢󠁥󠁮󠁧󠁿",
+            "Croacia": "🇭🇷", "Croatia": "🇭🇷", "Ghana": "🇬🇭", "Panamá": "🇵🇦", "Panama": "🇵🇦", "Uzbekistán": "🇺🇿", "Uzbekistan": "🇺🇿",
             "Colombia": "🇨🇴"
         };
 
-        // Base de Datos Oficial de Partidos Fase de Grupos
-        const partidosData = [
-            { id: 1, dia: 11, mes: "junio", diaSemana: "Jueves", equipo1: "México", equipo2: "Sudáfrica", hora: "Finalizado", estadio: "Estadio Azteca (CDMX)", resultado: "2 - 0", grupo: "Grupo A" },
-            { id: 2, dia: 11, mes: "junio", diaSemana: "Jueves", equipo1: "Corea del Sur", equipo2: "Chequia", hora: "Finalizado", estadio: "Estadio Guadalajara", resultado: "2 - 1", grupo: "Grupo A" },
-            
-            { id: 3, dia: 12, mes: "junio", diaSemana: "Viernes", equipo1: "Canadá", equipo2: "Bosnia y Herzegovina", hora: "13:00", estadio: "Estadio Toronto", resultado: null, grupo: "Grupo B" },
-            { id: 4, dia: 12, mes: "junio", diaSemana: "Viernes", equipo1: "Estados Unidos", equipo2: "Paraguay", hora: "19:00", estadio: "Estadio Los Angeles", resultado: null, grupo: "Grupo B" },
-            
-            { id: 5, dia: 13, mes: "junio", diaSemana: "Sábado", equipo1: "Qatar", equipo2: "Suiza", hora: "13:00", estadio: "Estadio San Francisco", resultado: null, grupo: "Grupo C" },
-            { id: 6, dia: 13, mes: "junio", diaSemana: "Sábado", equipo1: "Brasil", equipo2: "Marruecos", hora: "16:00", estadio: "Estadio Nueva Jersey", resultado: null, grupo: "Grupo C" },
-            { id: 7, dia: 13, mes: "junio", diaSemana: "Sábado", equipo1: "Haití", equipo2: "Escocia", hora: "19:00", estadio: "Estadio Boston", resultado: null, grupo: "Grupo D" },
-            { id: 8, dia: 13, mes: "junio", diaSemana: "Sábado", equipo1: "Australia", equipo2: "Turquía", hora: "22:00", estadio: "Estadio Vancouver", resultado: null, grupo: "Grupo D" },
-            
-            { id: 9, dia: 14, mes: "junio", diaSemana: "Domingo", equipo1: "Alemania", equipo2: "Curazao", hora: "11:00", estadio: "Estadio Houston", resultado: null, grupo: "Grupo E" },
-            { id: 10, dia: 14, mes: "junio", diaSemana: "Domingo", equipo1: "Países Bajos", equipo2: "Japón", hora: "14:00", estadio: "Estadio Dallas", resultado: null, grupo: "Grupo E" },
-            { id: 11, dia: 14, mes: "junio", diaSemana: "Domingo", equipo1: "Costa de Marfil", equipo2: "Ecuador", hora: "17:00", estadio: "Estadio Philadelphia", resultado: null, grupo: "Grupo F" },
-            { id: 12, dia: 14, mes: "junio", diaSemana: "Domingo", equipo1: "Suecia", equipo2: "Túnez", hora: "20:00", estadio: "Estadio Monterrey", resultado: null, grupo: "Grupo F" },
-            
-            { id: 13, dia: 15, mes: "junio", diaSemana: "Lunes", equipo1: "España", equipo2: "Cabo Verde", hora: "10:00", estadio: "Estadio Atlanta", resultado: null, grupo: "Grupo G" },
-            { id: 14, dia: 15, mes: "junio", diaSemana: "Lunes", equipo1: "Bélgica", equipo2: "Egipto", hora: "13:00", estadio: "Estadio Seattle", resultado: null, grupo: "Grupo G" },
-            { id: 15, dia: 15, mes: "junio", diaSemana: "Lunes", equipo1: "Arabia Saudita", equipo2: "Uruguay", hora: "16:00", estadio: "Estadio Miami", resultado: null, grupo: "Grupo H" },
-            { id: 16, dia: 15, mes: "junio", diaSemana: "Lunes", equipo1: "Irán", equipo2: "Nueva Zelanda", hora: "19:00", estadio: "Estadio Los Angeles", resultado: null, grupo: "Grupo H" },
-            
-            { id: 17, dia: 16, mes: "junio", diaSemana: "Martes", equipo1: "Francia", equipo2: "Senegal", hora: "13:00", estadio: "Estadio Nueva Jersey", resultado: null, grupo: "Grupo I" },
-            { id: 18, dia: 16, mes: "junio", diaSemana: "Martes", equipo1: "Irak", equipo2: "Noruega", hora: "16:00", estadio: "Estadio Boston", resultado: null, grupo: "Grupo I" },
-            { id: 19, dia: 16, mes: "junio", diaSemana: "Martes", equipo1: "Argentina", equipo2: "Argelia", hora: "19:00", estadio: "Estadio Kansas City", resultado: null, grupo: "Grupo J" },
-            { id: 20, dia: 16, mes: "junio", diaSemana: "Martes", equipo1: "Austria", equipo2: "Jordania", hora: "22:00", estadio: "Estadio San Francisco", resultado: null, grupo: "Grupo J" },
-            
-            { id: 21, dia: 17, mes: "junio", diaSemana: "Miércoles", equipo1: "Portugal", equipo2: "RD Congo", hora: "11:00", estadio: "Estadio Houston", resultado: null, grupo: "Grupo K" },
-            { id: 22, dia: 17, mes: "junio", diaSemana: "Miércoles", equipo1: "Inglaterra", equipo2: "Croacia", hora: "14:00", estadio: "Estadio Dallas", resultado: null, grupo: "Grupo K" },
-            { id: 23, dia: 17, mes: "junio", diaSemana: "Miércoles", equipo1: "Ghana", equipo2: "Panamá", hora: "17:00", estadio: "Estadio Toronto", resultado: null, grupo: "Grupo L" },
-            { id: 24, dia: 17, mes: "junio", diaSemana: "Miércoles", equipo1: "Uzbekistán", equipo2: "Colombia", hora: "20:00", estadio: "Estadio Ciudad de México", resultado: null, grupo: "Grupo L" },
-            
-            { id: 25, dia: 18, mes: "junio", diaSemana: "Jueves", equipo1: "Chequia", equipo2: "Sudáfrica", hora: "10:00", estadio: "Estadio Atlanta", resultado: null },
-            { id: 26, dia: 18, mes: "junio", diaSemana: "Jueves", equipo1: "Suiza", equipo2: "Bosnia-Herzegovina", hora: "13:00", estadio: "Estadio Los Angeles", resultado: null },
-            { id: 27, dia: 18, mes: "junio", diaSemana: "Jueves", equipo1: "Canadá", equipo2: "Qatar", hora: "16:00", estadio: "Estadio Vancouver", resultado: null },
-            { id: 28, dia: 18, mes: "junio", diaSemana: "Jueves", equipo1: "México", equipo2: "Corea del Sur", hora: "19:00", estadio: "Estadio Guadalajara", resultado: null },
-            
-            { id: 29, dia: 19, mes: "junio", diaSemana: "Viernes", equipo1: "Estados Unidos", equipo2: "Australia", hora: "13:00", estadio: "Estadio Seattle", resultado: null },
-            { id: 30, dia: 19, mes: "junio", diaSemana: "Viernes", equipo1: "Escocia", equipo2: "Marruecos", hora: "16:00", estadio: "Estadio Boston", resultado: null },
-            { id: 31, dia: 19, mes: "junio", diaSemana: "Viernes", equipo1: "Brasil", equipo2: "Haití", hora: "18:30", estadio: "Estadio Philadelphia", resultado: null },
-            { id: 32, dia: 19, mes: "junio", diaSemana: "Viernes", equipo1: "Turquía", equipo2: "Paraguay", hora: "21:00", estadio: "Estadio San Francisco", resultado: null },
-            
-            { id: 33, dia: 20, mes: "junio", diaSemana: "Sábado", equipo1: "Países Bajos", equipo2: "Suecia", hora: "11:00", estadio: "Estadio Houston", resultado: null },
-            { id: 34, dia: 20, mes: "junio", diaSemana: "Sábado", equipo1: "Alemania", equipo2: "Costa de Marfil", hora: "14:00", estadio: "Estadio Toronto", resultado: null },
-            { id: 35, dia: 20, mes: "junio", diaSemana: "Sábado", equipo1: "Ecuador", equipo2: "Curazao", hora: "18:00", estadio: "Estadio Kansas City", resultado: null },
-            { id: 36, dia: 20, mes: "junio", diaSemana: "Sábado", equipo1: "Túnez", equipo2: "Japón", hora: "22:00", estadio: "Estadio Monterrey", resultado: null },
-            
-            { id: 37, dia: 21, mes: "junio", diaSemana: "Domingo", equipo1: "España", equipo2: "Arabia Saudita", hora: "10:00", estadio: "Estadio Atlanta", resultado: null },
-            { id: 38, dia: 21, mes: "junio", diaSemana: "Domingo", equipo1: "Bélgica", equipo2: "Irán", hora: "13:00", estadio: "Estadio Los Angeles", resultado: null },
-            { id: 39, dia: 21, mes: "junio", diaSemana: "Domingo", equipo1: "Uruguay", equipo2: "Cabo Verde", hora: "16:00", estadio: "Estadio Miami", resultado: null },
-            { id: 40, dia: 21, mes: "junio", diaSemana: "Domingo", equipo1: "Nueva Zelanda", equipo2: "Egipto", hora: "19:00", estadio: "Estadio Vancouver", resultado: null },
-            
-            { id: 41, dia: 22, mes: "junio", diaSemana: "Lunes", equipo1: "Argentina", equipo2: "Austria", hora: "11:00", estadio: "Estadio Dallas", resultado: null },
-            { id: 42, dia: 22, mes: "junio", diaSemana: "Lunes", equipo1: "Francia", equipo2: "Irak", hora: "15:00", estadio: "Estadio Philadelphia", resultado: null },
-            { id: 43, dia: 22, mes: "junio", diaSemana: "Lunes", equipo1: "Noruega", equipo2: "Senegal", hora: "18:00", estadio: "Estadio Nueva Jersey", resultado: null },
-            { id: 44, dia: 22, mes: "junio", diaSemana: "Lunes", equipo1: "Jordania", equipo2: "Argelia", hora: "21:00", estadio: "Estadio San Francisco", resultado: null },
-            
-            { id: 45, dia: 23, mes: "junio", diaSemana: "Martes", equipo1: "Portugal", equipo2: "Uzbekistán", hora: "11:00", estadio: "Estadio Houston", resultado: null },
-            { id: 46, dia: 23, mes: "junio", diaSemana: "Martes", equipo1: "Inglaterra", equipo2: "Ghana", hora: "14:00", estadio: "Estadio Boston", resultado: null },
-            { id: 47, dia: 23, mes: "junio", diaSemana: "Martes", equipo1: "Panamá", equipo2: "Croacia", hora: "17:00", estadio: "Estadio Toronto", resultado: null },
-            { id: 48, dia: 23, mes: "junio", diaSemana: "Martes", equipo1: "Colombia", equipo2: "RD Congo", hora: "20:00", estadio: "Estadio Guadalajara", resultado: null },
-            
-            { id: 49, dia: 24, mes: "junio", diaSemana: "Miércoles", equipo1: "Suiza", equipo2: "Canadá", hora: "13:00", estadio: "Estadio Vancouver", resultado: null },
-            { id: 50, dia: 24, mes: "junio", diaSemana: "Miércoles", equipo1: "Bosnia y Herzegovina", equipo2: "Qatar", hora: "13:00", estadio: "Estadio Seattle", resultado: null },
-            { id: 51, dia: 24, mes: "junio", diaSemana: "Miércoles", equipo1: "Escocia", equipo2: "Brasil", hora: "16:00", estadio: "Estadio Miami", resultado: null },
-            { id: 52, dia: 24, mes: "junio", diaSemana: "Miércoles", equipo1: "Marruecos", equipo2: "Haití", hora: "16:00", estadio: "Estadio Atlanta", resultado: null },
-            { id: 53, dia: 24, mes: "junio", diaSemana: "Miércoles", equipo1: "Chequia", equipo2: "México", hora: "19:00", estadio: "Estadio Ciudad de México", resultado: null },
-            { id: 54, dia: 24, mes: "junio", diaSemana: "Miércoles", equipo1: "Sudáfrica", equipo2: "Corea del Sur", hora: "19:00", estadio: "Estadio Guadalajara", resultado: null },
-            
-            { id: 55, dia: 25, mes: "junio", diaSemana: "Jueves", equipo1: "Curazao", equipo2: "Costa de Marfil", hora: "14:00", estadio: "Estadio Philadelphia", resultado: null },
-            { id: 56, dia: 25, mes: "junio", diaSemana: "Jueves", equipo1: "Ecuador", equipo2: "Alemania", hora: "14:00", estadio: "Estadio Nueva Jersey", resultado: null },
-            { id: 57, dia: 25, mes: "junio", diaSemana: "Jueves", equipo1: "Japón", equipo2: "Suecia", hora: "17:00", estadio: "Estadio Dallas", resultado: null },
-            { id: 58, dia: 25, mes: "junio", diaSemana: "Jueves", equipo1: "Túnez", equipo2: "Países Bajos", hora: "17:00", estadio: "Estadio Kansas City", resultado: null },
-            { id: 59, dia: 25, mes: "junio", diaSemana: "Jueves", equipo1: "Turquía", equipo2: "Estados Unidos", hora: "20:00", estadio: "Estadio Los Angeles", resultado: null },
-            { id: 60, dia: 25, mes: "junio", diaSemana: "Jueves", equipo1: "Paraguay", equipo2: "Australia", hora: "20:00", estadio: "Estadio San Francisco", resultado: null },
-            
-            { id: 61, dia: 26, mes: "junio", diaSemana: "Viernes", equipo1: "Noruega", equipo2: "Francia", hora: "13:00", estadio: "Estadio Boston", resultado: null },
-            { id: 62, dia: 26, mes: "junio", diaSemana: "Viernes", equipo1: "Senegal", equipo2: "Irak", hora: "13:00", estadio: "Estadio Toronto", resultado: null },
-            { id: 63, dia: 26, mes: "junio", diaSemana: "Viernes", equipo1: "Cabo Verde", equipo2: "Arabia Saudita", hora: "18:00", estadio: "Estadio Houston", resultado: null },
-            { id: 64, dia: 26, mes: "junio", diaSemana: "Viernes", equipo1: "Uruguay", equipo2: "España", hora: "18:00", estadio: "Estadio Guadalajara", resultado: null },
-            { id: 65, dia: 26, mes: "junio", diaSemana: "Viernes", equipo1: "Egipto", equipo2: "Irán", hora: "21:00", estadio: "Estadio Seattle", resultado: null },
-            { id: 66, dia: 26, mes: "junio", diaSemana: "Viernes", equipo1: "Nueva Zelanda", equipo2: "Bélgica", hora: "21:00", estadio: "Estadio Vancouver", resultado: null },
-            
-            { id: 67, dia: 27, mes: "junio", diaSemana: "Sábado", equipo1: "Panamá", equipo2: "Inglaterra", hora: "15:00", estadio: "Estadio Nueva Jersey", resultado: null },
-            { id: 68, dia: 27, mes: "junio", diaSemana: "Sábado", equipo1: "Croacia", equipo2: "Ghana", hora: "15:00", estadio: "Estadio Philadelphia", resultado: null },
-            { id: 69, dia: 27, mes: "junio", diaSemana: "Sábado", equipo1: "Colombia", equipo2: "Portugal", hora: "17:30", estadio: "Estadio Miami", resultado: null },
-            { id: 70, dia: 27, mes: "junio", diaSemana: "Sábado", equipo1: "RD Congo", equipo2: "Uzbekistán", hora: "17:30", estadio: "Estadio Atlanta", resultado: null },
-            { id: 71, dia: 27, mes: "junio", diaSemana: "Sábado", equipo1: "Argelia", equipo2: "Austria", hora: "20:00", estadio: "Estadio Kansas City", resultado: null },
-            { id: 72, dia: 27, mes: "junio", diaSemana: "Sábado", equipo1: "Jordania", equipo2: "Argentina", hora: "20:00", estadio: "Estadio Dallas", resultado: null }
+        // Traducciones de nombres de países para conservar coherencia de idioma
+        const traduccionesPaises = {
+            "Mexico": "México", "South Africa": "Sudáfrica", "South Korea": "Corea del Sur", "Korea Republic": "Corea del Sur", "Czechia": "Chequia", "Czech Republic": "Chequia",
+            "Canada": "Canadá", "Bosnia and Herzegovina": "Bosnia y Herzegovina", "United States": "Estados Unidos", "USA": "Estados Unidos", "Switzerland": "Suiza", "Brazil": "Brasil",
+            "Morocco": "Marruecos", "Haiti": "Haití", "Scotland": "Escocia", "Turkey": "Turquía", "Germany": "Alemania", "Curacao": "Curazao", "Netherlands": "Países Bajos",
+            "Japan": "Japón", "Ivory Coast": "Costa de Marfil", "Sweden": "Suecia", "Tunisia": "Túnez", "Spain": "España", "Cape Verde": "Cabo Verde", "Belgium": "Bélgica",
+            "Egypt": "Egipto", "Saudi Arabia": "Arabia Saudita", "Iran": "Irán", "New Zealand": "Nueva Zelanda", "France": "Francia", "Iraq": "Irak", "Norway": "Noruega",
+            "Algeria": "Argelia", "Jordan": "Jordania", "DR Congo": "RD Congo", "England": "Inglaterra", "Croatia": "Croacia", "Panama": "Panamá", "Uzbekistan": "Uzbekistán"
+        };
+
+        // Base de Datos Local por defecto (Sirve como respaldo inmediato)
+        let partidosData = [
+            { id: 1, dia: 11, mes: "junio", diaSemana: "Jueves", equipo1: "México", equipo2: "Sudáfrica", hora: "Finalizado", estadio: "Estadio Azteca (CDMX)", resultado: "2 - 0", grupo: "Grupo A", enVivo: false },
+            { id: 2, dia: 11, mes: "junio", diaSemana: "Jueves", equipo1: "Corea del Sur", equipo2: "Chequia", hora: "Finalizado", estadio: "Estadio Guadalajara", resultado: "2 - 1", grupo: "Grupo A", enVivo: false },
+            { id: 3, dia: 12, mes: "junio", diaSemana: "Viernes", equipo1: "Canadá", equipo2: "Bosnia y Herzegovina", hora: "13:00", estadio: "Estadio Toronto", resultado: null, grupo: "Grupo B", enVivo: false },
+            { id: 4, dia: 12, mes: "junio", diaSemana: "Viernes", equipo1: "Estados Unidos", equipo2: "Paraguay", hora: "19:00", estadio: "Estadio Los Angeles", resultado: null, grupo: "Grupo B", enVivo: false },
+            { id: 5, dia: 13, mes: "junio", diaSemana: "Sábado", equipo1: "Qatar", equipo2: "Suiza", hora: "13:00", estadio: "Estadio San Francisco", resultado: null, grupo: "Grupo C", enVivo: false },
+            { id: 6, dia: 13, mes: "junio", diaSemana: "Sábado", equipo1: "Brasil", equipo2: "Marruecos", hora: "16:00", estadio: "Estadio Nueva Jersey", resultado: null, grupo: "Grupo C", enVivo: false },
+            { id: 7, dia: 13, mes: "junio", diaSemana: "Sábado", equipo1: "Haití", equipo2: "Escocia", hora: "19:00", estadio: "Estadio Boston", resultado: null, grupo: "Grupo D", enVivo: false },
+            { id: 8, dia: 13, mes: "junio", diaSemana: "Sábado", equipo1: "Australia", equipo2: "Turquía", hora: "22:00", estadio: "Estadio Vancouver", resultado: null, grupo: "Grupo D", enVivo: false },
+            { id: 9, dia: 14, mes: "junio", diaSemana: "Domingo", equipo1: "Alemania", equipo2: "Curazao", hora: "11:00", estadio: "Estadio Houston", resultado: null, grupo: "Grupo E", enVivo: false },
+            { id: 10, dia: 14, mes: "junio", diaSemana: "Domingo", equipo1: "Países Bajos", equipo2: "Japón", hora: "14:00", estadio: "Estadio Dallas", resultado: null, grupo: "Grupo E", enVivo: false },
+            { id: 11, dia: 14, mes: "junio", diaSemana: "Domingo", equipo1: "Costa de Marfil", equipo2: "Ecuador", hora: "17:00", estadio: "Estadio Philadelphia", resultado: null, grupo: "Grupo F", enVivo: false },
+            { id: 12, dia: 14, mes: "junio", diaSemana: "Domingo", equipo1: "Suecia", equipo2: "Túnez", hora: "20:00", estadio: "Estadio Monterrey", resultado: null, grupo: "Grupo F", enVivo: false },
+            { id: 13, dia: 15, mes: "junio", diaSemana: "Lunes", equipo1: "España", equipo2: "Cabo Verde", hora: "10:00", estadio: "Estadio Atlanta", resultado: null, grupo: "Grupo G", enVivo: false },
+            { id: 14, dia: 15, mes: "junio", diaSemana: "Lunes", equipo1: "Bélgica", equipo2: "Egipto", hora: "13:00", estadio: "Estadio Seattle", resultado: null, grupo: "Grupo G", enVivo: false },
+            { id: 15, dia: 15, mes: "junio", diaSemana: "Lunes", equipo1: "Arabia Saudita", equipo2: "Uruguay", hora: "16:00", estadio: "Estadio Miami", resultado: null, grupo: "Grupo H", enVivo: false },
+            { id: 16, dia: 15, mes: "junio", diaSemana: "Lunes", equipo1: "Irán", equipo2: "Nueva Zelanda", hora: "19:00", estadio: "Estadio Los Angeles", resultado: null, grupo: "Grupo H", enVivo: false },
+            { id: 17, dia: 16, mes: "junio", diaSemana: "Martes", equipo1: "Francia", equipo2: "Senegal", hora: "13:00", estadio: "Estadio Nueva Jersey", resultado: null, grupo: "Grupo I", enVivo: false },
+            { id: 18, dia: 16, mes: "junio", diaSemana: "Martes", equipo1: "Irak", equipo2: "Noruega", hora: "16:00", estadio: "Estadio Boston", resultado: null, grupo: "Grupo I", enVivo: false },
+            { id: 19, dia: 16, mes: "junio", diaSemana: "Martes", equipo1: "Argentina", equipo2: "Argelia", hora: "19:00", estadio: "Estadio Kansas City", resultado: null, grupo: "Grupo J", enVivo: false },
+            { id: 20, dia: 16, mes: "junio", diaSemana: "Martes", equipo1: "Austria", equipo2: "Jordania", hora: "22:00", estadio: "Estadio San Francisco", resultado: null, grupo: "Grupo J", enVivo: false },
+            { id: 21, dia: 17, mes: "junio", diaSemana: "Miércoles", equipo1: "Portugal", equipo2: "RD Congo", hora: "11:00", estadio: "Estadio Houston", resultado: null, grupo: "Grupo K", enVivo: false },
+            { id: 22, dia: 17, mes: "junio", diaSemana: "Miércoles", equipo1: "Inglaterra", equipo2: "Croacia", hora: "14:00", estadio: "Estadio Dallas", resultado: null, grupo: "Grupo K", enVivo: false },
+            { id: 23, dia: 17, mes: "junio", diaSemana: "Miércoles", equipo1: "Ghana", equipo2: "Panamá", hora: "17:00", estadio: "Estadio Toronto", resultado: null, grupo: "Grupo L", enVivo: false },
+            { id: 24, dia: 17, mes: "junio", diaSemana: "Miércoles", equipo1: "Uzbekistán", equipo2: "Colombia", hora: "20:00", estadio: "Estadio Ciudad de México", resultado: null, grupo: "Grupo L", enVivo: false },
+            { id: 25, dia: 18, mes: "junio", diaSemana: "Jueves", equipo1: "Chequia", equipo2: "Sudáfrica", hora: "10:00", estadio: "Estadio Atlanta", resultado: null, enVivo: false },
+            { id: 26, dia: 18, mes: "junio", diaSemana: "Jueves", equipo1: "Suiza", equipo2: "Bosnia-Herzegovina", hora: "13:00", estadio: "Estadio Los Angeles", resultado: null, enVivo: false },
+            { id: 27, dia: 18, mes: "junio", diaSemana: "Jueves", equipo1: "Canadá", equipo2: "Qatar", hora: "16:00", estadio: "Estadio Vancouver", resultado: null, enVivo: false },
+            { id: 28, dia: 18, mes: "junio", diaSemana: "Jueves", equipo1: "México", equipo2: "Corea del Sur", hora: "19:00", estadio: "Estadio Guadalajara", resultado: null, enVivo: false },
+            { id: 29, dia: 19, mes: "junio", diaSemana: "Viernes", equipo1: "Estados Unidos", equipo2: "Australia", hora: "13:00", estadio: "Estadio Seattle", resultado: null, enVivo: false },
+            { id: 30, dia: 19, mes: "junio", diaSemana: "Viernes", equipo1: "Escocia", equipo2: "Marruecos", hora: "16:00", estadio: "Estadio Boston", resultado: null, enVivo: false },
+            { id: 31, dia: 19, mes: "junio", diaSemana: "Viernes", equipo1: "Brasil", equipo2: "Haití", hora: "18:30", estadio: "Estadio Philadelphia", resultado: null, enVivo: false },
+            { id: 32, dia: 19, mes: "junio", diaSemana: "Viernes", equipo1: "Turquía", equipo2: "Paraguay", hora: "21:00", estadio: "Estadio San Francisco", resultado: null, enVivo: false },
+            { id: 33, dia: 20, mes: "junio", diaSemana: "Sábado", equipo1: "Países Bajos", equipo2: "Suecia", hora: "11:00", estadio: "Estadio Houston", resultado: null, enVivo: false },
+            { id: 34, dia: 20, mes: "junio", diaSemana: "Sábado", equipo1: "Alemania", equipo2: "Costa de Marfil", hora: "14:00", estadio: "Estadio Toronto", resultado: null, enVivo: false },
+            { id: 35, dia: 20, mes: "junio", diaSemana: "Sábado", equipo1: "Ecuador", equipo2: "Curazao", hora: "18:00", estadio: "Estadio Kansas City", resultado: null, enVivo: false },
+            { id: 36, dia: 20, mes: "junio", diaSemana: "Sábado", equipo1: "Túnez", equipo2: "Japón", hora: "22:00", estadio: "Estadio Monterrey", resultado: null, enVivo: false },
+            { id: 37, dia: 21, mes: "junio", diaSemana: "Domingo", equipo1: "España", equipo2: "Arabia Saudita", hora: "10:00", estadio: "Estadio Atlanta", resultado: null, enVivo: false },
+            { id: 38, dia: 21, mes: "junio", diaSemana: "Domingo", equipo1: "Bélgica", equipo2: "Irán", hora: "13:00", estadio: "Estadio Los Angeles", resultado: null, enVivo: false },
+            { id: 39, dia: 21, mes: "junio", diaSemana: "Domingo", equipo1: "Uruguay", equipo2: "Cabo Verde", hora: "16:00", estadio: "Estadio Miami", resultado: null, enVivo: false },
+            { id: 40, dia: 21, mes: "junio", diaSemana: "Domingo", equipo1: "Nueva Zelanda", equipo2: "Egipto", hora: "19:00", estadio: "Estadio Vancouver", resultado: null, enVivo: false },
+            { id: 41, dia: 22, mes: "junio", diaSemana: "Lunes", equipo1: "Argentina", equipo2: "Austria", hora: "11:00", estadio: "Estadio Dallas", resultado: null, enVivo: false },
+            { id: 42, dia: 22, mes: "junio", diaSemana: "Lunes", equipo1: "Francia", equipo2: "Irak", hora: "15:00", estadio: "Estadio Philadelphia", resultado: null, enVivo: false },
+            { id: 43, dia: 22, mes: "junio", diaSemana: "Lunes", equipo1: "Noruega", equipo2: "Senegal", hora: "18:00", estadio: "Estadio Nueva Jersey", resultado: null, enVivo: false },
+            { id: 44, dia: 22, mes: "junio", diaSemana: "Lunes", equipo1: "Jordania", equipo2: "Argelia", hora: "21:00", estadio: "Estadio San Francisco", resultado: null, enVivo: false },
+            { id: 45, dia: 23, mes: "junio", diaSemana: "Martes", equipo1: "Portugal", equipo2: "Uzbekistán", hora: "11:00", estadio: "Estadio Houston", resultado: null, enVivo: false },
+            { id: 46, dia: 23, mes: "junio", diaSemana: "Martes", equipo1: "Inglaterra", equipo2: "Ghana", hora: "14:00", estadio: "Estadio Boston", resultado: null, enVivo: false },
+            { id: 47, dia: 23, mes: "junio", diaSemana: "Martes", equipo1: "Panamá", equipo2: "Croacia", hora: "17:00", estadio: "Estadio Toronto", resultado: null, enVivo: false },
+            { id: 48, dia: 23, mes: "junio", diaSemana: "Martes", equipo1: "Colombia", equipo2: "RD Congo", hora: "20:00", estadio: "Estadio Guadalajara", resultado: null, enVivo: false },
+            { id: 49, dia: 24, mes: "junio", diaSemana: "Miércoles", equipo1: "Suiza", equipo2: "Canadá", hora: "13:00", estadio: "Estadio Vancouver", resultado: null, enVivo: false },
+            { id: 50, dia: 24, mes: "junio", diaSemana: "Miércoles", equipo1: "Bosnia y Herzegovina", equipo2: "Qatar", hora: "13:00", estadio: "Estadio Seattle", resultado: null, enVivo: false },
+            { id: 51, dia: 24, mes: "junio", diaSemana: "Miércoles", equipo1: "Escocia", equipo2: "Brasil", hora: "16:00", estadio: "Estadio Miami", resultado: null, enVivo: false },
+            { id: 52, dia: 24, mes: "junio", diaSemana: "Miércoles", equipo1: "Marruecos", equipo2: "Haití", hora: "16:00", estadio: "Estadio Atlanta", resultado: null, enVivo: false },
+            { id: 53, dia: 24, mes: "junio", diaSemana: "Miércoles", equipo1: "Chequia", equipo2: "México", hora: "19:00", estadio: "Estadio Ciudad de México", resultado: null, enVivo: false },
+            { id: 54, dia: 24, mes: "junio", diaSemana: "Miércoles", equipo1: "Sudáfrica", equipo2: "Corea del Sur", hora: "19:00", estadio: "Estadio Guadalajara", resultado: null, enVivo: false },
+            { id: 55, dia: 25, mes: "junio", diaSemana: "Jueves", equipo1: "Curazao", equipo2: "Costa de Marfil", hora: "14:00", estadio: "Estadio Philadelphia", resultado: null, enVivo: false },
+            { id: 56, dia: 25, mes: "junio", diaSemana: "Jueves", equipo1: "Ecuador", equipo2: "Alemania", hora: "14:00", estadio: "Estadio Nueva Jersey", resultado: null, enVivo: false },
+            { id: 57, dia: 25, mes: "junio", diaSemana: "Jueves", equipo1: "Japón", equipo2: "Suecia", hora: "17:00", estadio: "Estadio Dallas", resultado: null, enVivo: false },
+            { id: 58, dia: 25, mes: "junio", diaSemana: "Jueves", equipo1: "Túnez", equipo2: "Países Bajos", hora: "17:00", estadio: "Estadio Kansas City", resultado: null, enVivo: false },
+            { id: 59, dia: 25, mes: "junio", diaSemana: "Jueves", equipo1: "Turquía", equipo2: "Estados Unidos", hora: "20:00", estadio: "Estadio Los Angeles", resultado: null, enVivo: false },
+            { id: 60, dia: 25, mes: "junio", diaSemana: "Jueves", equipo1: "Paraguay", equipo2: "Australia", hora: "20:00", estadio: "Estadio San Francisco", resultado: null, enVivo: false },
+            { id: 61, dia: 26, mes: "junio", diaSemana: "Viernes", equipo1: "Noruega", equipo2: "Francia", hora: "13:00", estadio: "Estadio Boston", resultado: null, enVivo: false },
+            { id: 62, dia: 26, mes: "junio", diaSemana: "Viernes", equipo1: "Senegal", equipo2: "Irak", hora: "13:00", estadio: "Estadio Toronto", resultado: null, enVivo: false },
+            { id: 63, dia: 26, mes: "junio", diaSemana: "Viernes", equipo1: "Cabo Verde", equipo2: "Arabia Saudita", hora: "18:00", estadio: "Estadio Houston", resultado: null, enVivo: false },
+            { id: 64, dia: 26, mes: "junio", diaSemana: "Viernes", equipo1: "Uruguay", equipo2: "España", hora: "18:00", estadio: "Estadio Guadalajara", resultado: null, enVivo: false },
+            { id: 65, dia: 26, mes: "junio", diaSemana: "Viernes", equipo1: "Egipto", equipo2: "Irán", hora: "21:00", estadio: "Estadio Seattle", resultado: null, enVivo: false },
+            { id: 66, dia: 26, mes: "junio", diaSemana: "Viernes", equipo1: "Nueva Zelanda", equipo2: "Bélgica", hora: "21:00", estadio: "Estadio Vancouver", resultado: null, enVivo: false },
+            { id: 67, dia: 27, mes: "junio", diaSemana: "Sábado", equipo1: "Panamá", equipo2: "Inglaterra", hora: "15:00", estadio: "Estadio Nueva Jersey", resultado: null, enVivo: false },
+            { id: 68, dia: 27, mes: "junio", diaSemana: "Sábado", equipo1: "Croacia", equipo2: "Ghana", hora: "15:00", estadio: "Estadio Philadelphia", resultado: null, enVivo: false },
+            { id: 69, dia: 27, mes: "junio", diaSemana: "Sábado", equipo1: "Colombia", equipo2: "Portugal", hora: "17:30", estadio: "Estadio Miami", resultado: null, enVivo: false },
+            { id: 70, dia: 27, mes: "junio", diaSemana: "Sábado", equipo1: "RD Congo", equipo2: "Uzbekistán", hora: "17:30", estadio: "Estadio Atlanta", resultado: null, enVivo: false },
+            { id: 71, dia: 27, mes: "junio", diaSemana: "Sábado", equipo1: "Argelia", equipo2: "Austria", hora: "20:00", estadio: "Estadio Kansas City", resultado: null, enVivo: false },
+            { id: 72, dia: 27, mes: "junio", diaSemana: "Sábado", equipo1: "Jordania", equipo2: "Argentina", hora: "20:00", estadio: "Estadio Dallas", resultado: null, enVivo: false }
         ];
 
-        // Fases Eliminatorias Estructuradas
-        const eliminatoriasFases = {
+        // Fases Eliminatorias Estructuradas (Respaldo)
+        let eliminatoriasFases = {
             dieciseisavos: [
-                { id: "16-1", fase: "Dieciseisavos de Final", equipo1: "Ganador Grupo A", equipo2: "2do Grupo C", hora: "Por definir", estadio: "Estadio Los Angeles", resultado: "Simulación", info: "Llave 1 de 16" },
-                { id: "16-2", fase: "Dieciseisavos de Final", equipo1: "Ganador Grupo B", equipo2: "Mejor 3ro A/C/D", hora: "Por definir", estadio: "Estadio Dallas", resultado: "Simulación", info: "Llave 2 de 16" },
-                { id: "16-3", fase: "Dieciseisavos de Final", equipo1: "Ganador Grupo C", equipo2: "2do Grupo D", hora: "Por definir", estadio: "Estadio Nueva Jersey", resultado: "Simulación", info: "Llave 3 de 16" }
+                { id: "16-1", fase: "Dieciseisavos de Final", equipo1: "Ganador Grupo A", equipo2: "2do Grupo C", hora: "Por definir", estadio: "Estadio Los Angeles", resultado: null, info: "Llave 1 de 16" },
+                { id: "16-2", fase: "Dieciseisavos de Final", equipo1: "Ganador Grupo B", equipo2: "Mejor 3ro A/C/D", hora: "Por definir", estadio: "Estadio Dallas", resultado: null, info: "Llave 2 de 16" },
+                { id: "16-3", fase: "Dieciseisavos de Final", equipo1: "Ganador Grupo C", equipo2: "2do Grupo D", hora: "Por definir", estadio: "Estadio Nueva Jersey", resultado: null, info: "Llave 3 de 16" }
             ],
             octavos: [
-                { id: "8-1", fase: "Octavos de Final", equipo1: "Ganador Llave 1", equipo2: "Ganador Llave 2", hora: "Por definir", estadio: "Estadio Houston", resultado: "Simulación" },
-                { id: "8-2", fase: "Octavos de Final", equipo1: "Ganador Llave 3", equipo2: "Ganador Llave 4", hora: "Por definir", estadio: "Estadio Seattle", resultado: "Simulación" }
+                { id: "8-1", fase: "Octavos de Final", equipo1: "Ganador Llave 1", equipo2: "Ganador Llave 2", hora: "Por definir", estadio: "Estadio Houston", resultado: null },
+                { id: "8-2", fase: "Octavos de Final", equipo1: "Ganador Llave 3", equipo2: "Ganador Llave 4", hora: "Por definir", estadio: "Estadio Seattle", resultado: null }
             ],
             cuartos: [
-                { id: "4-1", fase: "Cuartos de Final", equipo1: "Ganador Octavos 1", equipo2: "Ganador Octavos 2", hora: "Por definir", estadio: "Estadio Boston", resultado: "Simulación" },
-                { id: "4-2", fase: "Cuartos de Final", equipo1: "Ganador Octavos 3", equipo2: "Ganador Octavos 4", hora: "Por definir", estadio: "Estadio San Francisco", resultado: "Simulación" }
+                { id: "4-1", fase: "Cuartos de Final", equipo1: "Ganador Octavos 1", equipo2: "Ganador Octavos 2", hora: "Por definir", estadio: "Estadio Boston", resultado: null },
+                { id: "4-2", fase: "Cuartos de Final", equipo1: "Ganador Octavos 3", equipo2: "Ganador Octavos 4", hora: "Por definir", estadio: "Estadio San Francisco", resultado: null }
             ],
             semis: [
-                { id: "2-1", fase: "Semifinal", equipo1: "Ganador Cuartos 1", equipo2: "Ganador Cuartos 2", hora: "19:00", estadio: "Estadio Dallas", resultado: "Semifinal A" },
-                { id: "2-2", fase: "Semifinal", equipo1: "Ganador Cuartos 3", equipo2: "Ganador Cuartos 4", hora: "19:00", estadio: "Estadio Atlanta", resultado: "Semifinal B" }
+                { id: "2-1", fase: "Semifinal", equipo1: "Ganador Cuartos 1", equipo2: "Ganador Cuartos 2", hora: "19:00", estadio: "Estadio Dallas", resultado: null },
+                { id: "2-2", fase: "Semifinal", equipo1: "Ganador Cuartos 3", equipo2: "Ganador Cuartos 4", hora: "19:00", estadio: "Estadio Atlanta", resultado: null }
             ],
             final: [
-                { id: "1-1", fase: "Gran Final", equipo1: "Ganador Semifinal A", equipo2: "Ganador Semifinal B", hora: "15:00", estadio: "Estadio MetLife (Nueva Jersey)", resultado: "Copa del Mundo", especial: true }
+                { id: "1-1", fase: "Gran Final", equipo1: "Ganador Semifinal A", equipo2: "Ganador Semifinal B", hora: "15:00", estadio: "Estadio MetLife (Nueva Jersey)", resultado: null, especial: true }
             ]
         };
 
         // VARIABLES DE CONTROL DE ESTADO
-        let diaSeleccionado = 12; // Valor por defecto correspondiente a la simulación del "Hoy"
-        let mesSeleccionado = "junio";
-        let faseActiva = "grupos"; // "grupos" o fase de eliminatorias ("dieciseisavos", "octavos", etc.)
+        let diaSeleccionado = 12; // Día simulado por defecto
+        let faseActiva = "grupos"; // "grupos" o fases de eliminatorias
         let filtroBusqueda = "";
-        let toastTimeout; // Manejador de temporizador para ocultar la notificación
+        let toastTimeout;
 
-        // Función para mostrar notificaciones dinámicas (Toast)
-        function mostrarToast(mensaje) {
+        // Funciones Helper de fechas necesarias para la UI del calendario
+        function obtenerDiaSemanaJunio(dia) {
+            const dias = ["Jue", "Vie", "Sáb", "Dom", "Lun", "Mar", "Mié"];
+            return dias[(dia - 11) % 7];
+        }
+
+        function obtenerDiaSemanaLargo(dia) {
+            const dias = ["Jueves", "Viernes", "Sábado", "Domingo", "Lunes", "Martes", "Miércoles"];
+            return dias[(dia - 11) % 7];
+        }
+
+        function seleccionarDiaActual() {
+            selectDia(12);
+            mostrarToast("Regresaste al día de hoy (12 de junio)");
+        }
+
+        // Función Helper para normalizar texto (Quitar acentos)
+        function normalizarTexto(texto) {
+            return texto.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
+        }
+
+        // Mostrar notificaciones dinámicas (Toast) con iconos de gol/info
+        function mostrarToast(mensaje, iconName = 'info') {
             const toast = document.getElementById('toast');
             const toastMessage = document.getElementById('toast-message');
-            if (!toast || !toastMessage) return;
+            const toastIcon = document.getElementById('toast-icon');
+            if (!toast || !toastMessage || !toastIcon) return;
 
             toastMessage.textContent = mensaje;
+            toastIcon.setAttribute('data-lucide', iconName);
             
-            // Animación de entrada: Remover ocultamiento, aplicar opacidad y posición original
+            // Re-render del icono del Toast
+            lucide.createIcons({
+                attrs: { class: 'w-5 h-5 text-emerald-400' },
+                name: iconName
+            });
+
             toast.classList.remove('translate-y-[-100px]', 'opacity-0');
             toast.classList.add('translate-y-0', 'opacity-100');
 
-            // Limpiar timeout anterior si existe
-            if (toastTimeout) {
-                clearTimeout(toastTimeout);
-            }
+            if (toastTimeout) clearTimeout(toastTimeout);
 
-            // Ocultar automáticamente después de 3 segundos
             toastTimeout = setTimeout(() => {
                 toast.classList.remove('translate-y-0', 'opacity-100');
                 toast.classList.add('translate-y-[-100px]', 'opacity-0');
-            }, 3000);
+            }, 4000);
         }
 
-        // Inicializar el calendario de forma dinámica
+        // Cambiar la visibilidad del formulario según el proveedor de API
+        function actualizarInterfazAPI() {
+            const provider = document.getElementById('api-provider').value;
+            const containerToken = document.getElementById('container-token');
+            const containerCustomUrl = document.getElementById('container-custom-url');
+
+            if (provider === 'football-data') {
+                containerToken.classList.remove('hidden');
+                containerCustomUrl.classList.add('hidden');
+            } else {
+                containerToken.classList.add('hidden');
+                containerCustomUrl.classList.remove('hidden');
+            }
+        }
+
+        // CONEXIÓN Y CONSULTA A API REAL EN RUTEO SEGURO CON PROXY DE CORS
+        async function conectarAPIReal() {
+            const provider = document.getElementById('api-provider').value;
+            const statusBadge = document.getElementById('status-badge');
+            const btnConnect = document.getElementById('btn-connect-api');
+            const labelLastStatus = document.getElementById('api-last-status');
+
+            // Preparación Visual del botón (Cargador / Spinner)
+            const originalHTML = btnConnect.innerHTML;
+            btnConnect.disabled = true;
+            btnConnect.innerHTML = `<svg class="animate-spin h-4 w-4 text-slate-950" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg> Conectando...`;
+
+            let url = "";
+            let headers = {};
+
+            if (provider === 'football-data') {
+                const token = document.getElementById('api-token').value.trim();
+                if (!token) {
+                    mostrarToast("Por favor, ingresa tu API Token de Football-Data", "alert-circle");
+                    restaurarBoton();
+                    return;
+                }
+                
+                // Empleamos corsproxy.io para que el navegador no bloquee la llamada por CORS
+                const targetUrl = "https://api.football-data.org/v4/competitions/WC/matches";
+                url = `https://corsproxy.io/?${encodeURIComponent(targetUrl)}`;
+                headers = { "X-Auth-Token": token };
+            } else {
+                const customUrl = document.getElementById('api-custom-url').value.trim();
+                if (!customUrl) {
+                    mostrarToast("Por favor, introduce una URL de API válida", "alert-circle");
+                    restaurarBoton();
+                    return;
+                }
+                // Si el endpoint custom requiere proxy de CORS también se lo añadimos
+                url = `https://corsproxy.io/?${encodeURIComponent(customUrl)}`;
+            }
+
+            mostrarToast("Realizando petición a la API mediante proxy seguro...", "wifi");
+
+            try {
+                const response = await fetch(url, { headers: headers });
+                
+                if (!response.ok) {
+                    throw new Error(`Error de servidor deportivo (${response.status})`);
+                }
+
+                const data = await response.json();
+                
+                // Procesar e integrar la respuesta real en nuestro sistema
+                mapearDatosAPIReal(data, provider);
+
+                // Actualizar interfaz visual
+                statusBadge.className = "text-[9px] bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 px-2 py-0.5 rounded-full font-bold flex items-center gap-1";
+                statusBadge.innerHTML = `<span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-ping"></span> API Real`;
+                labelLastStatus.textContent = "Sincronizado correctamente";
+                
+                mostrarToast("¡Sincronizado con éxito con la base de datos real!", "check");
+                renderPartidos();
+
+            } catch (error) {
+                console.error("Error en conexión de API:", error);
+                
+                let msjDetallado = error.message;
+                if (error.message.includes("Failed to fetch") || error.message.includes("NetworkError")) {
+                    msjDetallado = "La conexión de red ha fallado temporalmente o el servidor no responde.";
+                }
+
+                mostrarToast(`Fallo en la llamada: ${msjDetallado}`, "shield-alert");
+                labelLastStatus.textContent = "Error de conexión con la API";
+            } finally {
+                restaurarBoton();
+            }
+
+            function restaurarBoton() {
+                btnConnect.disabled = false;
+                btnConnect.innerHTML = originalHTML;
+            }
+        }
+
+        // TRADUCTOR INTELIGENTE DE DATOS EXTERNOS (API -> LOCAL FORMAT)
+        function mapearDatosAPIReal(apiResponse, provider) {
+            let matches = [];
+
+            if (provider === 'football-data' && apiResponse.matches) {
+                matches = apiResponse.matches;
+            } else if (Array.isArray(apiResponse)) {
+                matches = apiResponse;
+            } else if (apiResponse.results) {
+                matches = apiResponse.results;
+            } else {
+                matches = apiResponse; // Respuestas generales
+            }
+
+            if (!Array.isArray(matches) || matches.length === 0) {
+                throw new Error("No se encontraron partidos en la respuesta de la API.");
+            }
+
+            const faseGruposMapeados = [];
+            const eliminatoriasMapeadas = {
+                dieciseisavos: [],
+                octavos: [],
+                cuartos: [],
+                semis: [],
+                final: []
+            };
+
+            matches.forEach((m, index) => {
+                // Leer datos del Home/Away Team de forma segura
+                const rawHome = m.homeTeam?.name || m.homeTeamName || "Por definir";
+                const rawAway = m.awayTeam?.name || m.awayTeamName || "Por definir";
+
+                // Traducir nombre de país si es inglés y lo tenemos en nuestro catálogo
+                const equipo1 = traduccionesPaises[rawHome] || rawHome;
+                const equipo2 = traduccionesPaises[rawAway] || rawAway;
+
+                // Extraer fecha y hora
+                const rawDate = m.utcDate || m.date || "";
+                let dia = 12;
+                let horaStr = "12:00";
+                
+                if (rawDate) {
+                    const parsedDate = new Date(rawDate);
+                    if (!isNaN(parsedDate)) {
+                        dia = parsedDate.getDate();
+                        horaStr = parsedDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+                    }
+                }
+
+                // Extraer Marcador / Resultado real
+                let resultado = null;
+                const scoreObj = m.score?.fullTime || m.score || {};
+                if (scoreObj.home !== undefined && scoreObj.home !== null) {
+                    resultado = `${scoreObj.home} - ${scoreObj.away}`;
+                } else if (m.homeScore !== undefined && m.homeScore !== null) {
+                    resultado = `${m.homeScore} - ${m.awayScore}`;
+                }
+
+                // Determinar si está en juego
+                const status = (m.status || "").toUpperCase();
+                const enVivo = status === "IN_PLAY" || status === "LIVE" || status === "PAUSE";
+                const isFinalizado = status === "FINISHED" || status === "AWARDED" || status === "COMPLETED";
+
+                let horaLabel = isFinalizado ? "Finalizado" : horaStr;
+
+                // Estructurar el partido formateado
+                const partidoFormateado = {
+                    id: m.id || index + 500,
+                    dia: dia,
+                    mes: "junio",
+                    equipo1: equipo1,
+                    equipo2: equipo2,
+                    hora: horaLabel,
+                    estadio: m.venue || m.stadium || "Estadio del Mundial",
+                    resultado: resultado,
+                    grupo: mapearNombreGrupo(m.group || m.stage),
+                    enVivo: enVivo
+                };
+
+                // Clasificar en Fase de Grupos o Fases Eliminatorias
+                const stage = (m.stage || m.fase || "GROUP_STAGE").toUpperCase();
+                if (stage.includes("GROUP") || stage.includes("GRUPO")) {
+                    faseGruposMapeados.push(partidoFormateado);
+                } else if (stage.includes("LAST_32") || stage.includes("DIECISEISAVOS") || stage.includes("ROUND_OF_32")) {
+                    partidoFormateado.fase = "Dieciseisavos de Final";
+                    eliminatoriasMapeadas.dieciseisavos.push(partidoFormateado);
+                } else if (stage.includes("LAST_16") || stage.includes("OCTAVOS") || stage.includes("ROUND_OF_16")) {
+                    partidoFormateado.fase = "Octavos de Final";
+                    eliminatoriasMapeadas.octavos.push(partidoFormateado);
+                } else if (stage.includes("QUARTER") || stage.includes("CUARTOS")) {
+                    partidoFormateado.fase = "Cuartos de Final";
+                    eliminatoriasMapeadas.cuartos.push(partidoFormateado);
+                } else if (stage.includes("SEMI") || stage.includes("SEMIS")) {
+                    partidoFormateado.fase = "Semifinal";
+                    eliminatoriasMapeadas.semis.push(partidoFormateado);
+                } else if (stage.includes("FINAL")) {
+                    partidoFormateado.fase = "Gran Final";
+                    partidoFormateado.especial = true;
+                    eliminatoriasMapeadas.final.push(partidoFormateado);
+                } else {
+                    faseGruposMapeados.push(partidoFormateado);
+                }
+            });
+
+            // Reemplazar base de datos interna si hay datos mapeados con éxito
+            if (faseGruposMapeados.length > 0) {
+                partidosData = faseGruposMapeados;
+            }
+
+            // Integrar fases eliminatorias encontradas
+            Object.keys(eliminatoriasMapeadas).forEach(key => {
+                if (eliminatoriasMapeadas[key].length > 0) {
+                    eliminatoriasFases[key] = eliminatoriasMapeadas[key];
+                }
+            });
+        }
+
+        function mapearNombreGrupo(rawGroup) {
+            if (!rawGroup) return "Fase de Grupos";
+            // Traducir GROUP_A a Grupo A
+            return rawGroup.toUpperCase().replace("GROUP_", "Grupo ").replace("GROUP ", "Grupo ");
+        }
+
+        // Inicializar el calendario de fechas dinámicamente
         function initCalendarioUI() {
             const dateContainer = document.getElementById('date-scroll-container');
+            if (!dateContainer) return;
+            
             dateContainer.innerHTML = '';
+            const fragment = document.createDocumentFragment();
 
-            // Construir días del 11 al 27 de junio para Fase de Grupos
             for (let dia = 11; dia <= 27; dia++) {
                 const diaSemana = obtenerDiaSemanaJunio(dia);
                 const isSelected = (dia === diaSeleccionado && faseActiva === "grupos");
@@ -404,22 +695,24 @@
                 const btn = document.createElement('button');
                 btn.id = `date-btn-${dia}`;
                 btn.onclick = () => selectDia(dia);
-                btn.className = `flex-shrink-0 w-20 py-3 rounded-2xl border text-center transition-all ${
+                
+                btn.className = `flex-shrink-0 w-20 py-3 rounded-2xl border text-center smooth-transition ${
                     isSelected 
-                    ? 'date-active border-emerald-500' 
-                    : 'bg-slate-900/60 border-white/5 hover:bg-slate-800/80 hover:border-white/10 text-slate-300'
+                    ? 'date-active border-emerald-500 text-white' 
+                    : 'bg-slate-900/60 border-white/5 hover:bg-slate-800/80 hover:border-white/20 text-slate-300'
                 }`;
 
                 btn.innerHTML = `
-                    <span class="block text-[10px] uppercase font-bold tracking-tight ${isSelected ? 'text-emerald-100' : 'text-slate-500'}">${diaSemana}</span>
+                    <span class="block text-[10px] uppercase font-bold tracking-wider ${isSelected ? 'text-emerald-100' : 'text-slate-500'}">${diaSemana}</span>
                     <span class="block text-2xl font-black my-0.5">${dia}</span>
                     <span class="block text-[10px] font-bold ${isSelected ? 'text-white' : 'text-emerald-500'}">JUNIO</span>
                 `;
 
-                dateContainer.appendChild(btn);
+                fragment.appendChild(btn);
             }
 
-            // Realizar scroll automático al día seleccionado en la barra
+            dateContainer.appendChild(fragment);
+
             setTimeout(() => {
                 const activeBtn = document.getElementById(`date-btn-${diaSeleccionado}`);
                 if (activeBtn) {
@@ -428,71 +721,70 @@
             }, 300);
         }
 
-        // Helper para mapear días de junio 2026
-        function obtenerDiaSemanaJunio(dia) {
-            const dias = ["Jue", "Vie", "Sáb", "Dom", "Lun", "Mar", "Mié"];
-            // 11 de junio es Jueves (Índice 0)
-            const index = (dia - 11) % 7;
-            return dias[index];
-        }
-
-        // Selección de un día en específico de la fase de grupos
         function selectDia(dia) {
             faseActiva = "grupos";
             diaSeleccionado = dia;
             
-            // Remover estilos activos previos de todos los botones de fecha
-            for (let d = 11; d <= 27; d++) {
-                const btn = document.getElementById(`date-btn-${d}`);
-                if (btn) {
-                    btn.className = "flex-shrink-0 w-20 py-3 rounded-2xl border text-center transition-all bg-slate-900/60 border-white/5 hover:bg-slate-800/80 hover:border-white/10 text-slate-300";
-                    const spanSemana = btn.querySelector('span:first-child');
-                    const spanMes = btn.querySelector('span:last-child');
-                    if (spanSemana) spanSemana.className = "block text-[10px] uppercase font-bold tracking-tight text-slate-500";
+            const botones = document.querySelectorAll('[id^="date-btn-"]');
+            botones.forEach(btn => {
+                const d = parseInt(btn.id.replace('date-btn-', ''));
+                const isSelected = (d === dia);
+                const spanSemana = btn.querySelector('span:first-child');
+                const spanMes = btn.querySelector('span:last-child');
+                
+                if (isSelected) {
+                    btn.className = "flex-shrink-0 w-20 py-3 rounded-2xl border text-center smooth-transition date-active border-emerald-500 text-white";
+                    if (spanSemana) spanSemana.className = "block text-[10px] uppercase font-bold tracking-wider text-emerald-100";
+                    if (spanMes) spanMes.className = "block text-[10px] font-bold text-white";
+                } else {
+                    btn.className = "flex-shrink-0 w-20 py-3 rounded-2xl border text-center smooth-transition bg-slate-900/60 border-white/5 hover:bg-slate-800/80 hover:border-white/20 text-slate-300";
+                    if (spanSemana) spanSemana.className = "block text-[10px] uppercase font-bold tracking-wider text-slate-500";
                     if (spanMes) spanMes.className = "block text-[10px] font-bold text-emerald-400";
                 }
-            }
+            });
 
-            // Aplicar estilo activo al seleccionado
-            const activeBtn = document.getElementById(`date-btn-${dia}`);
-            if (activeBtn) {
-                activeBtn.className = "flex-shrink-0 w-20 py-3 rounded-2xl border text-center transition-all date-active border-emerald-500";
-                const spanSemana = activeBtn.querySelector('span:first-child');
-                const spanMes = activeBtn.querySelector('span:last-child');
-                if (spanSemana) spanSemana.className = "block text-[10px] uppercase font-bold tracking-tight text-emerald-100";
-                if (spanMes) spanMes.className = "block text-[10px] font-bold text-white";
-            }
-
-            // Actualizar vista de partidos
+            limpiarEstilosFases();
             renderPartidos();
             
-            // Actualizar banner central
             document.getElementById('fase-titulo').innerHTML = `Fase de Grupos <span class="text-xs md:text-sm bg-emerald-500 text-slate-950 px-2.5 py-1 rounded-full font-bold">11 al 27 de junio</span>`;
             document.getElementById('current-info-banner').textContent = `Mostrando partidos del ${obtenerDiaSemanaLargo(dia)} ${dia} de junio de 2026.`;
         }
 
-        function obtenerDiaSemanaLargo(dia) {
-            const dias = ["Jueves", "Viernes", "Sábado", "Domingo", "Lunes", "Martes", "Miércoles"];
-            const index = (dia - 11) % 7;
-            return dias[index];
+        function limpiarEstilosFases() {
+            const keys = ['dieciseisavos', 'octavos', 'cuartos', 'semis', 'final'];
+            keys.forEach(k => {
+                const btn = document.getElementById(`btn-phase-${k}`);
+                if (btn) {
+                    btn.classList.remove('border-emerald-500', 'bg-emerald-500/10', 'border-amber-400', 'bg-amber-400/20');
+                    btn.classList.add('border-white/10');
+                }
+            });
         }
 
-        // Selección de fases eliminatorias
         function seleccionarFaseEliminatoria(faseKey) {
             faseActiva = faseKey;
             
-            // Deseleccionar visualmente los botones de fechas de fase de grupos
-            for (let d = 11; d <= 27; d++) {
-                const btn = document.getElementById(`date-btn-${d}`);
-                if (btn) {
-                    btn.classList.remove('date-active');
-                    btn.classList.add('bg-slate-900/60');
+            const botones = document.querySelectorAll('[id^="date-btn-"]');
+            botones.forEach(btn => {
+                btn.className = "flex-shrink-0 w-20 py-3 rounded-2xl border text-center smooth-transition bg-slate-900/60 border-white/5 hover:bg-slate-800/80 hover:border-white/20 text-slate-300";
+                const spanSemana = btn.querySelector('span:first-child');
+                const spanMes = btn.querySelector('span:last-child');
+                if (spanSemana) spanSemana.className = "block text-[10px] uppercase font-bold tracking-wider text-slate-500";
+                if (spanMes) spanMes.className = "block text-[10px] font-bold text-emerald-400";
+            });
+
+            limpiarEstilosFases();
+            const activeBtn = document.getElementById(`btn-phase-${faseKey}`);
+            if (activeBtn) {
+                if (faseKey === 'final') {
+                    activeBtn.classList.add('border-amber-400', 'bg-amber-400/20');
+                } else {
+                    activeBtn.classList.add('border-emerald-500', 'bg-emerald-500/10');
                 }
             }
 
-            // Cambiar textos del banner informativo superior
             const titulosFase = {
-                dieciseisavos: "Dieciseisavos de Final <span class='text-xs md:text-sm bg-blue-500 text-white px-2.5 py-1 rounded-full font-bold'>28 de junio al 3 de julio</span>",
+                dieciseisavos: "Dieciseisavos de Final <span class='text-xs md:text-sm bg-emerald-500 text-slate-950 px-2.5 py-1 rounded-full font-bold'>28 de junio al 3 de julio</span>",
                 octavos: "Octavos de Final <span class='text-xs md:text-sm bg-blue-600 text-white px-2.5 py-1 rounded-full font-bold'>4 al 7 de julio</span>",
                 cuartos: "Cuartos de Final <span class='text-xs md:text-sm bg-indigo-600 text-white px-2.5 py-1 rounded-full font-bold'>9 al 11 de julio</span>",
                 semis: "Semifinales de la Copa <span class='text-xs md:text-sm bg-pink-600 text-white px-2.5 py-1 rounded-full font-bold'>14 y 15 de julio</span>",
@@ -506,38 +798,30 @@
             mostrarToast(`Visualizando fase de ${faseKey.toUpperCase()}`);
         }
 
-        // Función para saltar al día simulado de "Hoy" (Viernes 12 de Junio de 2026)
-        function seleccionarDiaActual() {
-            selectDia(12);
-            mostrarToast("Regresaste al día de hoy (12 de junio)");
-        }
-
-        // RENDEREADO DE TARJETAS DE PARTIDOS
+        // RENDEREADO OPTIMIZADO DE TARJETAS DE PARTIDOS
         function renderPartidos() {
             const grid = document.getElementById('partidos-grid');
             const noMatches = document.getElementById('no-matches-message');
-            grid.innerHTML = '';
+            if (!grid || !noMatches) return;
 
+            grid.innerHTML = '';
             let partidosFiltrados = [];
 
-            // 1. Obtener la bolsa de datos según la fase seleccionada
             if (faseActiva === "grupos") {
                 partidosFiltrados = partidosData.filter(p => p.dia === diaSeleccionado);
             } else {
                 partidosFiltrados = eliminatoriasFases[faseActiva] || [];
             }
 
-            // 2. Aplicar buscador si el usuario escribió algo
             if (filtroBusqueda.trim() !== "") {
-                const query = filtroBusqueda.toLowerCase();
+                const queryNormalized = normalizerTexto(filtroBusqueda);
                 partidosFiltrados = partidosFiltrados.filter(p => 
-                    p.equipo1.toLowerCase().includes(query) || 
-                    p.equipo2.toLowerCase().includes(query) || 
-                    p.estadio.toLowerCase().includes(query)
+                    normalizarTexto(p.equipo1).includes(queryNormalized) || 
+                    normalizarTexto(p.equipo2).includes(queryNormalized) || 
+                    normalizarTexto(p.estadio).includes(queryNormalized)
                 );
             }
 
-            // 3. Evaluar si hay resultados
             if (partidosFiltrados.length === 0) {
                 grid.classList.add('hidden');
                 noMatches.classList.remove('hidden');
@@ -547,23 +831,25 @@
                 noMatches.classList.add('hidden');
             }
 
-            // 4. Pintar cada partido
+            const fragment = document.createDocumentFragment();
+
             partidosFiltrados.forEach(partido => {
                 const band1 = banderasPaises[partido.equipo1] || "🏳️";
                 const band2 = banderasPaises[partido.equipo2] || "🏳️";
-                const isFinalizado = partido.hora === "Finalizado" || partido.resultado !== null;
+                const isFinalizado = partido.hora === "Finalizado" || partido.status === "FINISHED";
+                const isEnVivo = partido.enVivo;
 
-                // Tarjeta estilizada con micro-interacciones
                 const card = document.createElement('div');
-                card.className = "glass-panel p-5 rounded-2xl border border-white/10 hover:border-emerald-500/40 hover:shadow-xl hover:shadow-emerald-500/5 transition-all duration-300 relative overflow-hidden group";
+                card.className = "glass-panel p-5 rounded-2xl border border-white/10 hover:border-emerald-500/40 hover:shadow-xl hover:shadow-emerald-500/5 smooth-transition relative overflow-hidden group";
                 
-                // Línea decorativa lateral según la importancia o fase
-                let accentColor = "from-emerald-500 to-teal-500";
-                if (faseActiva !== "grupos") accentColor = "from-blue-500 to-indigo-500";
+                let accentColor = "from-slate-600 to-slate-400";
+                if (isEnVivo) accentColor = "from-red-500 to-rose-600 animate-pulse";
+                else if (isFinalizado) accentColor = "from-slate-700 to-slate-800";
+                else accentColor = "from-emerald-500 to-teal-500";
+
                 if (partido.especial) accentColor = "from-amber-400 to-yellow-600 animate-pulse";
 
                 card.innerHTML = `
-                    <!-- Barra de acento lateral -->
                     <div class="absolute left-0 top-0 bottom-0 w-1 bg-gradient-to-b ${accentColor}"></div>
                     
                     <div class="flex justify-between items-center mb-3">
@@ -571,48 +857,46 @@
                             ${partido.grupo || partido.fase || 'Grupo Eliminatorio'}
                         </span>
                         <div class="flex items-center gap-1.5 text-xs">
-                            <span class="w-1.5 h-1.5 rounded-full ${isFinalizado ? 'bg-red-500' : 'bg-emerald-400 animate-ping'}"></span>
-                            <span class="font-bold ${isFinalizado ? 'text-slate-400' : 'text-emerald-400'}">
-                                ${isFinalizado ? 'Finalizado' : 'En Vivo / Programado'}
+                            <span class="w-1.5 h-1.5 rounded-full ${isEnVivo ? 'bg-red-500 animate-ping' : isFinalizado ? 'bg-slate-500' : 'bg-emerald-400 animate-ping'}"></span>
+                            <span class="font-bold ${isEnVivo ? 'text-red-400' : isFinalizado ? 'text-slate-400' : 'text-emerald-400'}">
+                                ${isEnVivo ? 'EN VIVO' : isFinalizado ? 'Finalizado' : 'Programado'}
                             </span>
                         </div>
                     </div>
 
-                    <!-- Marcador y Nombres de Países -->
                     <div class="flex items-center justify-between my-4 gap-2">
                         <!-- Equipo 1 -->
                         <div class="flex flex-col items-center flex-1 text-center">
-                            <span class="text-4xl mb-1.5 transform group-hover:scale-110 transition-transform duration-300">${band1}</span>
+                            <span class="text-4xl mb-1.5 transform group-hover:scale-110 smooth-transition select-none">${band1}</span>
                             <span class="text-sm font-extrabold text-white leading-tight">${partido.equipo1}</span>
                         </div>
 
-                        <!-- Marcador o Reloj -->
-                        <div class="flex flex-col items-center justify-center px-4 py-2 bg-slate-900/90 rounded-xl border border-white/5 min-w-[100px]">
+                        <!-- Marcador / Hora -->
+                        <div class="flex flex-col items-center justify-center px-4 py-2 bg-slate-900/90 rounded-xl border border-white/5 min-w-[100px] shadow-inner relative">
                             ${partido.resultado 
-                                ? `<span class="text-xl font-black tracking-widest text-emerald-400">${partido.resultado}</span>`
-                                : `<span class="text-xs text-slate-400 font-medium">Hora de juego</span>
+                                ? `<span class="text-xl font-black tracking-widest ${isEnVivo ? 'text-red-400 animate-pulse' : 'text-emerald-400'}">${partido.resultado}</span>`
+                                : `<span class="text-[10px] text-slate-400 font-medium uppercase tracking-wider">Hora Local</span>
                                    <span class="text-sm font-extrabold text-white mt-0.5">${partido.hora} hs</span>`
                             }
                         </div>
 
                         <!-- Equipo 2 -->
                         <div class="flex flex-col items-center flex-1 text-center">
-                            <span class="text-4xl mb-1.5 transform group-hover:scale-110 transition-transform duration-300">${band2}</span>
+                            <span class="text-4xl mb-1.5 transform group-hover:scale-110 smooth-transition select-none">${band2}</span>
                             <span class="text-sm font-extrabold text-white leading-tight">${partido.equipo2}</span>
                         </div>
                     </div>
 
-                    <!-- Datos del Estadio -->
                     <div class="flex items-center gap-2 mt-4 pt-3 border-t border-white/5 text-[11px] text-slate-400">
                         <i data-lucide="map-pin" class="w-3.5 h-3.5 text-slate-500"></i>
                         <span class="truncate font-semibold">${partido.estadio}</span>
                     </div>
                 `;
 
-                grid.appendChild(card);
+                fragment.appendChild(card);
             });
 
-            // Re-renderizar iconos de Lucide cargados dinámicamente
+            grid.appendChild(fragment);
             lucide.createIcons();
         }
 
@@ -620,71 +904,83 @@
         const searchInput = document.getElementById('search-input');
         const clearBtn = document.getElementById('clear-search');
 
-        searchInput.addEventListener('input', (e) => {
-            filtroBusqueda = e.target.value;
-            if (filtroBusqueda.trim() !== "") {
-                clearBtn.classList.remove('hidden');
-            } else {
+        if (searchInput && clearBtn) {
+            searchInput.addEventListener('input', (e) => {
+                filtroBusqueda = e.target.value;
+                if (filtroBusqueda.trim() !== "") {
+                    clearBtn.classList.remove('hidden');
+                } else {
+                    clearBtn.classList.add('hidden');
+                }
+                renderPartidos();
+            });
+
+            clearBtn.addEventListener('click', () => {
+                searchInput.value = "";
+                filtroBusqueda = "";
                 clearBtn.classList.add('hidden');
-            }
-            renderPartidos();
-        });
+                renderPartidos();
+            });
+        }
 
-        clearBtn.addEventListener('click', () => {
-            searchInput.value = "";
-            filtroBusqueda = "";
-            clearBtn.classList.add('hidden');
-            renderPartidos();
-        });
+        // Soporte de Arrastre Manual de Scroll Horizontal
+        const slider = document.getElementById('date-scroll-container');
+        if (slider) {
+            let isDown = false;
+            let startX;
+            let scrollLeft;
 
-        // Inicializar interfaz al arrancar la pantalla
+            slider.addEventListener('mousedown', (e) => {
+                isDown = true;
+                slider.classList.add('active');
+                startX = e.pageX - slider.offsetLeft;
+                scrollLeft = slider.scrollLeft;
+            });
+            slider.addEventListener('mouseleave', () => {
+                isDown = false;
+            });
+            slider.addEventListener('mouseup', () => {
+                isDown = false;
+            });
+            slider.addEventListener('mousemove', (e) => {
+                if (!isDown) return;
+                e.preventDefault();
+                const x = e.pageX - slider.offsetLeft;
+                const walk = (x - startX) * 1.5;
+                slider.scrollLeft = scrollLeft - walk;
+            });
+        }
+
+        // Inicializar interfaz
         initCalendarioUI();
-        selectDia(12); // Preseleccionar el 12 de junio por defecto
+        selectDia(12);
     </script>
 
-    <!-- SCRIPT DE ANIMACIÓN Y COMPORTAMIENTO DEL CANVAS (Fondo Oficial) -->
+    <!-- SCRIPT DE ANIMACIÓN Y COMPORTAMIENTO DEL CANVAS OPTIMIZADO -->
     <script>
         const canvas = document.getElementById('canvasFondo');
         const ctx = canvas.getContext('2d');
 
-        // Paletas de Colores del canvas
         const paletas = {
             mundial: [
-                '#7f1d1d', // Borgoña oscuro
-                '#ea580c', // Naranja
-                '#ef4444', // Rojo
-                '#1d4ed8', // Azul real
-                '#60a5fa', // Celeste
-                '#22c55e', // Verde brillante
-                '#a3e635'  // Verde Lima
+                '#7f1d1d', '#ea580c', '#ef4444', '#1d4ed8', '#60a5fa', '#22c55e', '#a3e635'
             ],
             retro: [
-                '#0f172a',
-                '#ec4899',
-                '#a855f7',
-                '#3b82f6',
-                '#14b8a6',
-                '#eab308'
+                '#0f172a', '#ec4899', '#a855f7', '#3b82f6', '#14b8a6', '#eab308'
             ],
             sunset: [
-                '#312e81',
-                '#4c1d95',
-                '#6366f1',
-                '#f43f5e',
-                '#f97316',
-                '#eab308'
+                '#312e81', '#4c1d95', '#6366f1', '#f43f5e', '#f97316', '#eab308'
             ]
         };
 
-        // Estado del canvas
         let paletaActiva = 'mundial';
         let estiloPatron = 'concentric'; 
         let velocidad = 0.005; 
         let cantidadOndas = 15;
         let grosorTrazo = 35;
         let fase = 0; 
+        let animacionPausada = false;
 
-        // Sincronizar Sliders
         const sliderSpeed = document.getElementById('slider-speed');
         const sliderCurves = document.getElementById('slider-curves');
         const speedValue = document.getElementById('speed-value');
@@ -696,6 +992,24 @@
         }
         window.addEventListener('resize', resizeCanvas);
         resizeCanvas();
+
+        function toggleAnimacion() {
+            animacionPausada = !animacionPausada;
+            const btnText = document.getElementById('anim-text');
+            const btnIcon = document.getElementById('anim-icon');
+            
+            if (animacionPausada) {
+                btnText.textContent = "Reanudar";
+                btnIcon.setAttribute('data-lucide', 'play');
+                mostrarToast("Fondo pausado (Ahorro de batería)");
+            } else {
+                btnText.textContent = "Pausar";
+                btnIcon.setAttribute('data-lucide', 'pause');
+                mostrarToast("Fondo animado activado");
+                render();
+            }
+            lucide.createIcons();
+        }
 
         function setPatternStyle(style) {
             estiloPatron = style;
@@ -709,11 +1023,23 @@
                 btnTunnel.className = "py-1.5 px-2.5 rounded-lg text-xs font-semibold transition-all border border-emerald-500 bg-emerald-500/20 text-white";
                 btnConcentric.className = "py-1.5 px-2.5 rounded-lg text-xs font-semibold transition-all border border-white/5 bg-white/5 text-slate-300 hover:bg-white/10";
             }
+            mostrarToast(`Patrón cambiado a ${style === 'concentric' ? 'Concéntrico' : 'Túnel'}`);
         }
 
         function setPalette(paletteKey) {
             paletaActiva = paletteKey;
-            mostrarToast("Paleta del fondo cambiada");
+            const keys = ['mundial', 'retro', 'sunset'];
+            keys.forEach(k => {
+                const btn = document.getElementById(`btn-pal-${k}`);
+                if (btn) {
+                    if (k === paletteKey) {
+                        btn.className = "text-[10px] p-2 rounded-md bg-emerald-500/10 border border-emerald-500 text-center transition-all";
+                    } else {
+                        btn.className = "text-[10px] p-2 rounded-md bg-white/5 border border-white/5 text-center transition-all hover:bg-white/10";
+                    }
+                }
+            });
+            mostrarToast(`Paleta del fondo cambiada a ${paletteKey.toUpperCase()}`);
         }
 
         sliderSpeed.addEventListener('input', (e) => {
@@ -730,125 +1056,90 @@
             curvesValue.textContent = cantidadOndas;
         });
 
-        // Bucle de renderizado
-        function render() {
-            ctx.clearRect(0, 0, canvas.width, canvas.height);
-            fase += velocidad;
-
+        function dibujarPatron(contexto, ancho, alto, faseActual, escalaGrosor = 1) {
             const colors = paletas[paletaActiva];
-            const centerX = canvas.width / 2;
-            const centerY = canvas.height / 2;
-            const diagonalMax = Math.sqrt(canvas.width * canvas.width + canvas.height * canvas.height);
+            const centerX = ancho / 2;
+            const centerY = alto / 2;
+            const diagonalMax = Math.sqrt(ancho * ancho + alto * alto);
 
             if (estiloPatron === 'concentric') {
-                ctx.fillStyle = '#060810';
-                ctx.fillRect(0, 0, canvas.width, canvas.height);
+                contexto.fillStyle = '#060810';
+                contexto.fillRect(0, 0, ancho, alto);
+                const anguloPaso = 0.08;
 
                 for (let i = cantidadOndas; i > 0; i--) {
                     const radius = (i * (diagonalMax / cantidadOndas)) * 0.65;
-                    const pulse = Math.sin(fase + i * 0.3) * 20;
+                    const pulse = Math.sin(faseActual + i * 0.3) * 20;
                     
-                    ctx.strokeStyle = colors[i % colors.length];
-                    ctx.lineWidth = grosorTrazo * (1 + (i / cantidadOndas) * 0.5);
-                    ctx.lineCap = 'round';
+                    contexto.strokeStyle = colors[i % colors.length];
+                    contexto.lineWidth = grosorTrazo * (1 + (i / cantidadOndas) * 0.5) * escalaGrosor;
+                    contexto.lineCap = 'round';
                     
-                    ctx.beginPath();
-                    for (let angle = 0; angle <= Math.PI * 2; angle += 0.05) {
-                        const distorsion = Math.sin(angle * 4 + fase * 0.5) * Math.cos(angle * 2) * 50;
+                    contexto.beginPath();
+                    for (let angle = 0; angle <= Math.PI * 2 + 0.1; angle += anguloPaso) {
+                        const distorsion = Math.sin(angle * 4 + faseActual * 0.5) * Math.cos(angle * 2) * 50;
                         const currentRadius = radius + distorsion + pulse;
                         
                         const x = centerX + Math.cos(angle) * currentRadius * 1.2;
                         const y = centerY + Math.sin(angle) * currentRadius * 0.8;
                         
                         if (angle === 0) {
-                            ctx.moveTo(x, y);
+                            contexto.moveTo(x, y);
                         } else {
-                            ctx.lineTo(x, y);
+                            contexto.lineTo(x, y);
                         }
                     }
-                    ctx.closePath();
-                    ctx.stroke();
+                    contexto.closePath();
+                    contexto.stroke();
                 }
-
-                // Gran Centro Ovalado donde se posicionan las tarjetas
-                ctx.save();
-                ctx.beginPath();
-                ctx.ellipse(centerX, centerY, 130, 180, 0, 0, Math.PI * 2);
-                ctx.fillStyle = 'rgba(255, 255, 255, 0.02)';
-                ctx.restore();
-
             } else {
-                ctx.fillStyle = colors[0];
-                ctx.fillRect(0, 0, canvas.width, canvas.height);
+                contexto.fillStyle = colors[0];
+                contexto.fillRect(0, 0, ancho, alto);
 
                 for (let i = cantidadOndas; i > 0; i--) {
-                    const factorProporcion = (i - (fase % 1)) / cantidadOndas;
+                    const factorProporcion = (i - (faseActual % 1)) / cantidadOndas;
                     const radius = Math.pow(factorProporcion, 2) * (diagonalMax * 0.8);
                     
                     if (radius <= 0) continue;
 
-                    ctx.fillStyle = colors[(i + Math.floor(fase)) % colors.length];
+                    contexto.fillStyle = colors[(i + Math.floor(faseActual)) % colors.length];
                     
-                    ctx.beginPath();
+                    contexto.beginPath();
                     const w = radius * 1.4;
                     const h = radius * 0.95;
                     const x = centerX - w / 2;
                     const y = centerY - h / 2;
                     const r = radius * 0.25;
 
-                    ctx.roundRect ? ctx.roundRect(x, y, w, h, r) : ctx.rect(x, y, w, h);
-                    ctx.fill();
+                    if (contexto.roundRect) {
+                        contexto.roundRect(x, y, w, h, r);
+                    } else {
+                        contexto.rect(x, y, w, h);
+                    }
+                    contexto.fill();
                 }
             }
+        }
 
+        function render() {
+            if (animacionPausada) return;
+            fase += velocidad;
+            dibujarPatron(ctx, canvas.width, canvas.height, fase, 1);
             requestAnimationFrame(render);
         }
 
         render();
 
-        // DESCARGAR IMAGEN
         function descargarFondo() {
             const renderCanvas = document.createElement('canvas');
             const renderCtx = renderCanvas.getContext('2d');
             renderCanvas.width = 1920;
             renderCanvas.height = 1080;
 
-            const colors = paletas[paletaActiva];
-            const centerX = renderCanvas.width / 2;
-            const centerY = renderCanvas.height / 2;
-            const diagonalMax = Math.sqrt(renderCanvas.width * renderCanvas.width + renderCanvas.height * renderCanvas.height);
-
-            renderCtx.fillStyle = '#060810';
-            renderCtx.fillRect(0, 0, renderCanvas.width, renderCanvas.height);
-
-            for (let i = cantidadOndas; i > 0; i--) {
-                const radius = (i * (diagonalMax / cantidadOndas)) * 0.65;
-                const pulse = Math.sin(fase + i * 0.3) * 20;
-                
-                renderCtx.strokeStyle = colors[i % colors.length];
-                renderCtx.lineWidth = grosorTrazo * (1 + (i / cantidadOndas) * 0.5) * 1.5;
-                renderCtx.lineCap = 'round';
-                
-                renderCtx.beginPath();
-                for (let angle = 0; angle <= Math.PI * 2; angle += 0.05) {
-                    const distorsion = Math.sin(angle * 4 + fase * 0.5) * Math.cos(angle * 2) * 50;
-                    const currentRadius = radius + distorsion + pulse;
-                    
-                    const x = centerX + Math.cos(angle) * currentRadius * 1.2;
-                    const y = centerY + Math.sin(angle) * currentRadius * 0.8;
-                    
-                    if (angle === 0) {
-                        renderCtx.moveTo(x, y);
-                    } else {
-                        renderCtx.lineTo(x, y);
-                    }
-                }
-                renderCtx.closePath();
-                renderCtx.stroke();
-            }
+            dibujarPatron(renderCtx, renderCanvas.width, renderCanvas.height, fase, 1.5);
 
             const enlace = document.createElement('a');
-            enlace.download = `fondo_mundial_2026_${paletaActiva}.png`;
+            enlace.download = `fondo_mundial_2026_${paletaActiva}_${estiloPatron}.png`;
             enlace.href = renderCanvas.toDataURL('image/png');
             enlace.click();
             mostrarToast("¡Fondo 1080p descargado!");
