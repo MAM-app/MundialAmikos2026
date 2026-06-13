@@ -283,19 +283,17 @@
     <script>
         // Banderas de apoyo para países (Traducción y soporte multi-idioma de APIs)
         const banderasPaises = {
-            "México": "🇲🇽", "Mexico": "🇲🇽", "Sudáfrica": "🇿🇦", "South Africa": "🇿🇦", "Corea del Sur": "🇰🇷", "South Korea": "🇰🇷", "Korea Republic": "🇰🇷", "Chequia": "🇨🇿", "Czechia": "🇨🇿", "Czech Republic": "🇨🇿",
-            "Canadá": "🇨🇦", "Canada": "🇨🇦", "Bosnia y Herzegovina": "🇧🇦", "Bosnia-Herzegovina": "🇧🇦", "Bosnia and Herzegovina": "🇧🇦", "Estados Unidos": "🇺🇸", "USA": "🇺🇸", "United States": "🇺🇸",
-            "Paraguay": "🇵🇾", "Qatar": "🇶🇦", "Suiza": "🇨🇭", "Switzerland": "🇨🇭", "Brasil": "🇧🇷", "Brazil": "🇧🇷",
-            "Marruecos": "🇲🇦", "Morocco": "🇲🇦", "Haití": "🇭🇹", "Haiti": "🇭🇹", "Escocia": "🏴󠁧󠁢󠁳󠁣󠁴󠁿", "Scotland": "🏴󠁧󠁢󠁳󠁣󠁴󠁿", "Australia": "🇦🇺",
+            "México": "🇲🇽", "Mexico": "🇲🇽", "Sudáfrica": "🇿🇦", "South Africa": "🇿🇦", "Corea del Sur": "🇰🇷", "South Korea": "🇰🇷", "Chequia": "🇨🇿", "Czechia": "🇨🇿",
+            "Canadá": "🇨🇦", "Canada": "🇨🇦", "Bosnia y Herzegovina": "🇧🇦", "Estados Unidos": "🇺🇸", "USA": "🇺🇸", "Paraguay": "🇵🇾", "Qatar": "🇶🇦", "Suiza": "🇨🇭", "Switzerland": "🇨🇭",
+            "Brasil": "🇧🇷", "Brazil": "🇧🇷", "Marruecos": "🇲🇦", "Morocco": "🇲🇦", "Haití": "🇭🇹", "Haiti": "🇭🇹", "Escocia": "🏴󠁧󠁢󠁳󠁣󠁴󠁿", "Scotland": "🏴󠁧󠁢󠁳󠁣󠁴󠁿", "Australia": "🇦🇺",
             "Turquía": "🇹🇷", "Turkey": "🇹🇷", "Alemania": "🇩🇪", "Germany": "🇩🇪", "Curazao": "🇨🇼", "Curacao": "🇨🇼", "Países Bajos": "🇳🇱", "Netherlands": "🇳🇱",
-            "Japón": "🇯🇵", "Japan": "🇯🇵", "Costa de Marfil": "🇨🇮", "Ivory Coast": "🇨🇮", "Ecuador": "🇪🇨", "Suecia": "🇸🇪", "Sweden": "🇸🇪",
-            "Túnez": "🇹🇳", "Tunisia": "🇹🇳", "España": "🇪🇸", "Spain": "🇪🇸", "Cabo Verde": "🇨🇻", "Cape Verde": "🇨🇻", "Bélgica": "🇧🇪", "Belgium": "🇧🇪",
-            "Egipto": "🇪🇬", "Egypt": "🇪🇬", "Arabia Saudita": "🇸🇦", "Saudi Arabia": "🇸🇦", "Uruguay": "🇺🇾", "Irán": "🇮🇷", "Iran": "🇮🇷",
-            "Nueva Zelanda": "🇳🇿", "New Zealand": "🇳🇿", "Francia": "🇫🇷", "France": "🇫🇷", "Senegal": "🇸🇳", "Irak": "🇮🇶", "Iraq": "🇮🇶",
-            "Noruega": "🇳🇴", "Norway": "🇳🇴", "Argentina": "🇦🇷", "Argelia": "🇩🇿", "Algeria": "🇩🇿", "Austria": "🇦🇹",
-            "Jordania": "🇯🇴", "Jordan": "🇯🇴", "Portugal": "🇵🇹", "RD Congo": "🇨🇩", "DR Congo": "🇨🇩", "Inglaterra": "🏴󠁧󠁢󠁥󠁮󠁧󠁿", "England": "🏴󠁧󠁢󠁥󠁮󠁧󠁿",
-            "Croacia": "🇭🇷", "Croatia": "🇭🇷", "Ghana": "🇬🇭", "Panamá": "🇵🇦", "Panama": "🇵🇦", "Uzbekistán": "🇺🇿", "Uzbekistan": "🇺🇿",
-            "Colombia": "🇨🇴"
+            "Japón": "🇯🇵", "Japan": "🇯🇵", "Costa de Marfil": "🇨🇮", "Ivory Coast": "🇨🇮", "Ecuador": "🇪🇨", "Suecia": "🇸🇪", "Sweden": "🇸🇪", "Túnez": "🇹🇳", "Tunisia": "🇹🇳",
+            "España": "🇪🇸", "Spain": "🇪🇸", "Cabo Verde": "🇨🇻", "Cape Verde": "🇨🇻", "Bélgica": "🇧🇪", "Belgium": "🇧🇪", "Egipto": "🇪🇬", "Egypt": "🇪🇬",
+            "Arabia Saudita": "🇸🇦", "Saudi Arabia": "🇸🇦", "Uruguay": "🇺🇾", "Irán": "🇮🇷", "Iran": "🇮🇷", "Nueva Zelanda": "🇳🇿", "New Zealand": "🇳🇿",
+            "Francia": "🇫🇷", "France": "🇫🇷", "Senegal": "🇸🇳", "Irak": "🇮🇶", "Iraq": "🇮🇶", "Noruega": "🇳🇴", "Norway": "🇳🇴", "Argentina": "🇦🇷",
+            "Argelia": "🇩🇿", "Algeria": "🇩🇿", "Austria": "🇦🇹", "Jordania": "🇯🇴", "Jordan": "🇯🇴", "Portugal": "🇵🇹", "RD Congo": "🇨🇩", "DR Congo": "🇨🇩",
+            "Inglaterra": "🏴󠁧󠁢󠁥󠁮󠁧󠁿", "England": "🏴󠁧󠁢󠁥󠁮󠁧󠁿", "Croacia": "🇭🇷", "Croatia": "🇭🇷", "Ghana": "🇬🇭", "Panamá": "🇵🇦", "Panama": "🇵🇦", "Uzbekistán": "🇺🇿",
+            "Uzbekistan": "🇺🇿", "Colombia": "🇨🇴"
         };
 
         // Traducciones de nombres de países para conservar coherencia de idioma
